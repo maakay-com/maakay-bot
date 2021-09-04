@@ -1,4 +1,5 @@
 import os
+import humanize
 import sys
 import django
 from discord_slash.context import ComponentContext
@@ -167,7 +168,7 @@ async def user_withdraw(ctx, amount: int):
                         obj.save()
                         UserTransactionHistory.objects.create(user=obj, amount=amount + fee, type=UserTransactionHistory.WITHDRAW, transaction=txs)
                         statistic = Statistic.objects.first()
-                        statistic.total_tnbc -= (amount + fee)
+                        statistic.total_balance -= (amount + fee)
                         statistic.save()
                         embed = discord.Embed(title="Coins Withdrawn!",
                                             description=f"Successfully withdrawn {amount} TNBC to {obj.withdrawal_address} \n Use `/user balance` to check your new balance.")
@@ -181,6 +182,27 @@ async def user_withdraw(ctx, amount: int):
         embed = discord.Embed(title="No withdrawal address set!!", description="Use `/user set_withdrawal_address` to set withdrawal address!!")
 
     await ctx.send(embed=embed, hidden=True)
+
+
+@slash.subcommand(base="user", name="transactions", description="Check Transaction History!!")
+async def user_transactions(ctx):
+
+    await ctx.defer(hidden=True)
+
+    obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+
+    transactions = (await sync_to_async(UserTransactionHistory.objects.filter)(user=obj)).order_by('-created_at')[:8]
+
+    embed = discord.Embed(title="Transaction History", description="")
+
+    for txs in transactions:
+
+        natural_day = humanize.naturalday(txs.created_at)
+
+        embed.add_field(name='\u200b', value=f"{txs.type} - {txs.amount} TNBC - {natural_day}", inline=False)
+
+    await ctx.send(embed=embed, hidden=True)
+
 
 
 @slash.slash(name="kill", description="Kill the bot!!")

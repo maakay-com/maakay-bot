@@ -32,9 +32,9 @@ def check_confirmation():
                 txs.confirmation_status = Transaction.CONFIRMED
                 txs.save()
                 if txs.direction == Transaction.INCOMING:
-                    Statistic.objects.all().update(total_tnbc=F('total_tnbc') + txs.amount)
+                    Statistic.objects.all().update(total_balance=F('total_balance') + txs.amount)
                 else:
-                    Statistic.objects.all().update(total_tnbc=F('total_tnbc') - txs.amount - settings.TNBC_TRANSACTION_FEE)
+                    Statistic.objects.all().update(total_balance=F('total_balance') - txs.amount - settings.TNBC_TRANSACTION_FEE)
 
 
 def scan_chain():
