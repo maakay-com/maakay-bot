@@ -40,6 +40,22 @@ async def on_ready():
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="/help"))
 
 
+@slash.subcommand(base="user", name="balance", description="Check User Balance!!")
+async def user_balance(ctx):
+
+    await ctx.defer(hidden=True)
+
+    obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+
+    embed = discord.Embed()
+    embed.add_field(name='Withdrawal Address', value=obj.withdrawal_address, inline=False)
+    embed.add_field(name='Balance', value=obj.balance)
+    embed.add_field(name='Locked Amount', value=obj.locked)
+    embed.add_field(name='Available Balance', value=obj.get_available_balance())
+
+    await ctx.send(embed=embed, hidden=True)
+
+
 @slash.subcommand(base="user", name="deposit", description="Deposit TNBC into your maakay account!!")
 async def user_deposit(ctx):
 
