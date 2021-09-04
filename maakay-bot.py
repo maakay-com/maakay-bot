@@ -91,6 +91,63 @@ async def chain_scan(ctx: ComponentContext):
     await ctx.send(embed=embed, hidden=True, components=[create_actionrow(create_button(custom_id="chain_scan", style=ButtonStyle.green, label="Scan Again?"))])
 
 
+@slash.subcommand(base="user", name="withdraw", description="Withdraw TNBC into your account!!",
+                  options=[
+                      create_option(
+                          name="amount",
+                          description="Enter the amount to withdraw.",
+                          option_type=4,
+                          required=True
+                      )
+                  ]
+                  )
+async def user_withdraw(ctx, amount: int):
+
+    await ctx.defer(hidden=True)
+
+    obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+
+    if obj.withdrawal_address:
+
+        fee = estimate_fee()
+
+        if fee:
+            if obj.get_available_balance() < amount + fee:
+                embed = discord.Embed(title="Inadequate Funds!!",
+                                      description=f"You only have {obj.get_available_balance() - fee} withdrawable TNBC (network fees included) available. \n Use `/user deposit` to deposit TNBC!!")
+
+            else:
+                block_response, fee = withdraw_tnbc(obj.withdrawal_address, amount, obj.memo)
+
+                if block_response.status_code == 201:
+
+                    txs = Transaction.objects.create(confirmation_status=Transaction.WAITING_CONFIRMATION,
+                                                     transaction_status=Transaction.IDENTIFIED,
+                                                     direction=Transaction.OUTGOING,
+                                                     account_number=obj.withdrawal_address,
+                                                     amount=amount,
+                                                     fee=fee,
+                                                     signature=block_response.json()['signature'],
+                                                     block=block_response.json()['id'],
+                                                     memo=obj.memo)
+                    obj.balance -= amount + fee
+                    obj.save()
+                    UserTransactionHistory.objects.create(user=obj, amount=amount + fee, type=UserTransactionHistory.WITHDRAW, transaction=txs)
+                    statistic = Statistic.objects.first()
+                    statistic.total_tnbc -= (amount + fee)
+                    statistic.save()
+                    embed = discord.Embed(title="Coins Withdrawn!",
+                                          description=f"Successfully withdrawn {amount} TNBC to {obj.withdrawal_address} \n Use `/user balance` to check your new balance.")
+                else:
+                    embed = discord.Embed(title="Error!", description="Please try again later!!")
+        else:
+            embed = discord.Embed(title="Error!", description="Could not retrive fee info from the bank!!")
+    else:
+        embed = discord.Embed(title="No withdrawal address set!!", description="Use `/user setwithdrawaladdress` to set withdrawal address!!")
+
+    await ctx.send(embed=embed, hidden=True)
+
+
 @slash.slash(name="kill", description="Kill the bot!!")
 async def kill(ctx):
 
