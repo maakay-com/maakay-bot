@@ -2,8 +2,7 @@ from uuid import uuid4
 import random
 
 from django.db import models
-
-from .transactions import Transaction
+from ..models.transactions import Transaction
 
 
 class User(models.Model):
@@ -15,14 +14,6 @@ class User(models.Model):
     locked = models.IntegerField(default=0)
     memo = models.CharField(max_length=255, unique=True)
     withdrawal_address = models.CharField(max_length=64, blank=True, null=True)
-
-    total_won_in_challenges = models.IntegerField(default=0)
-    total_lost_in_challenges = models.IntegerField(default=0)
-    total_won_in_tournaments = models.IntegerField(default=0)
-
-    total_tournaments_won = models.IntegerField(default=0)
-    total_challenges_won = models.IntegerField(default=0)
-    total_referred = models.IntegerField(default=0)
 
     def get_available_balance(self):
         return self.balance - self.locked

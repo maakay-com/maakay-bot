@@ -2,7 +2,13 @@ import os
 from .base import *  # noqa: F401
 
 
+# Project Artitecture Constants
 DEBUG = False
+ALLOWED_HOSTS = ['*']
+
+# Business Logic Constants
+MIN_TNBC_ALLOWED = 100  # In TNBC
+
 
 DATABASES = {
     'default': {

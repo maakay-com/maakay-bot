@@ -9,10 +9,9 @@ class Statistic(models.Model):
 
     total_balance = models.IntegerField()
     total_fees_collected = models.IntegerField()
+
     total_servers = models.IntegerField()
     total_users = models.IntegerField()
-    total_challenges_hosted = models.IntegerField()
-    total_tournaments_hosted = models.IntegerField()
 
     def __str__(self):
         return f"Balance: {self.total_balance}; Servers: {self.total_servers}; Users: {self.total_users}"

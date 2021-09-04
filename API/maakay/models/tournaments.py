@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 
-from .users import User
+from core.models.users import User
 
 
 class Tournament(models.Model):

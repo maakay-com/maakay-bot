@@ -1,14 +1,11 @@
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-r+3$*i0g5elbqzl$vyve#fpm_!&!v&e9@3kby(o)as14cu76#='
-
-ALLOWED_HOSTS = []
-
+SECRET_KEY = os.environ['SECRET_KEY']
 
 # Application definition
 
@@ -20,11 +17,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # 3rd Party
     'rest_framework',
 
-    # In App
-    'main'
+    # 'escrow',
+    'core',
+    'maakay',
 ]
 
 MIDDLEWARE = [
@@ -59,6 +56,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
 
+# Password validation
+# https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -75,6 +75,9 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
+# Internationalization
+# https://docs.djangoproject.com/en/3.2/topics/i18n/
+
 LANGUAGE_CODE = 'en-us'
 
 TIME_ZONE = 'UTC'
@@ -85,6 +88,24 @@ USE_L10N = True
 
 USE_TZ = True
 
+
+# Static files (CSS, JavaScript, Images)
+# https://docs.djangoproject.com/en/3.2/howto/static-files/
+
 STATIC_URL = '/static/'
 
+STATIC_ROOT = 'static'
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Constants
+BANK_IP = '13.233.77.254'
+ACCOUNT_NUMBER = '7594d6d5ea7cb34d6e4ea09e161532bc41f171d4f0af6c189d8f05637e7dfe76'
+TNBC_TRANSACTION_FEE = 2  # In TNBC
+CROW_BOT_FEE = 2  # In Percentage
+PROHIBITED_ACCOUNT_NUMBERS = ['7594d6d5ea7cb34d6e4ea09e161532bc41f171d4f0af6c189d8f05637e7dfe76']
+SIGNING_KEY = os.environ['SIGNING_KEY']
+BOT_MANAGER_ID = '534628936571813889'
