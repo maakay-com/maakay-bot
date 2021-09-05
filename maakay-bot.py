@@ -25,7 +25,7 @@ from core.models.statistics import Statistic
 from core.models.users import User, UserTransactionHistory
 from core.utils.scan_chain import match_transaction, check_confirmation, scan_chain
 from core.utils.send_tnbc import estimate_fee, withdraw_tnbc
-from maakay.models.users import UserTip
+from maakay.models.users import UserTip, MaakayUser
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
@@ -207,6 +207,41 @@ async def user_transactions(ctx):
 
     await ctx.send(embed=embed, hidden=True)
 
+
+@slash.subcommand(base="user", name="profile", description="Check the user profile!!",
+                  options=[
+                      create_option(
+                          name="user",
+                          description="User you want to check stats of.",
+                          option_type=6,
+                          required=False
+                      )
+                  ]
+                  )
+async def user_profile(ctx, user: discord.Member = None):
+
+    await ctx.defer(hidden=True)
+
+    if user:
+        obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
+        embed = discord.Embed(title=f"Maakay Profile", description="")
+        embed.set_author(name=user.name, icon_url=user.avatar_url)
+    else:
+        obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+        embed = discord.Embed(title=f"Maakay Profile", description="")
+        embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+    
+    user_profile = await sync_to_async(MaakayUser.objects.get_or_create)(user=obj)
+
+    embed.add_field(name='Total Challenges Won', value=f"{user_profile[0].total_challenges_won}")
+    embed.add_field(name='Total Tournaments Won', value=f"{user_profile[0].total_tournaments_won}")
+    embed.add_field(name='TNBC won in challenges', value=f"{user_profile[0].total_won_in_challenges}")
+    embed.add_field(name='TNBC lost in challenges', value=f"{user_profile[0].total_lost_in_challenges}")
+    embed.add_field(name='TNBC won in tournaments', value=f"{user_profile[0].total_won_in_tournaments}")
+    embed.add_field(name='Total Times Referred', value=f"{user_profile[0].total_referred}")
+
+    await ctx.send(embed=embed, hidden=True)
+    
 
 @slash.subcommand(base="tip", name="new", description="Tip another user!!",
                   options=[
