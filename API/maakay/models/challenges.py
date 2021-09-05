@@ -33,5 +33,8 @@ class Challenge(models.Model):
 
     status = models.CharField(max_length=255, choices=status_choices)
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
     def __str__(self):
         return f"Title: {self.title}; Amount: {self.amount}"

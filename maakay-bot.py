@@ -19,11 +19,13 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 from django.conf import settings
+from django.db.models import Q
 from core.models.transactions import Transaction
 from core.models.statistics import Statistic
 from core.models.users import User, UserTransactionHistory
 from core.utils.scan_chain import match_transaction, check_confirmation, scan_chain
 from core.utils.send_tnbc import estimate_fee, withdraw_tnbc
+from maakay.models.users import UserTip
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
@@ -145,7 +147,7 @@ async def user_withdraw(ctx, amount: int):
         fee = estimate_fee()
 
         if fee:
-            if not amount < 3:
+            if not amount < 1:
                 if obj.get_available_balance() < amount + fee:
                     embed = discord.Embed(title="Inadequate Funds!!",
                                           description=f"You only have {obj.get_available_balance() - fee} withdrawable TNBC (network fees included) available. \n Use `/user deposit` to deposit TNBC!!")
@@ -153,29 +155,31 @@ async def user_withdraw(ctx, amount: int):
                 else:
                     block_response, fee = withdraw_tnbc(obj.withdrawal_address, amount, obj.memo)
 
-                    if block_response.status_code == 201:
-
-                        txs = Transaction.objects.create(confirmation_status=Transaction.WAITING_CONFIRMATION,
-                                                         transaction_status=Transaction.IDENTIFIED,
-                                                         direction=Transaction.OUTGOING,
-                                                         account_number=obj.withdrawal_address,
-                                                         amount=amount,
-                                                         fee=fee,
-                                                         signature=block_response.json()['signature'],
-                                                         block=block_response.json()['id'],
-                                                         memo=obj.memo)
-                        obj.balance -= amount + fee
-                        obj.save()
-                        UserTransactionHistory.objects.create(user=obj, amount=amount + fee, type=UserTransactionHistory.WITHDRAW, transaction=txs)
-                        statistic = Statistic.objects.first()
-                        statistic.total_balance -= (amount + fee)
-                        statistic.save()
-                        embed = discord.Embed(title="Coins Withdrawn!",
-                                              description=f"Successfully withdrawn {amount} TNBC to {obj.withdrawal_address} \n Use `/user balance` to check your new balance.")
+                    if block_response:
+                        if block_response.status_code == 201:
+                            txs = Transaction.objects.create(confirmation_status=Transaction.WAITING_CONFIRMATION,
+                                                            transaction_status=Transaction.IDENTIFIED,
+                                                            direction=Transaction.OUTGOING,
+                                                            account_number=obj.withdrawal_address,
+                                                            amount=amount,
+                                                            fee=fee,
+                                                            signature=block_response.json()['signature'],
+                                                            block=block_response.json()['id'],
+                                                            memo=obj.memo)
+                            obj.balance -= amount + fee
+                            obj.save()
+                            UserTransactionHistory.objects.create(user=obj, amount=amount + fee, type=UserTransactionHistory.WITHDRAW, transaction=txs)
+                            statistic = Statistic.objects.first()
+                            statistic.total_balance -= (amount + fee)
+                            statistic.save()
+                            embed = discord.Embed(title="Coins Withdrawn!",
+                                                description=f"Successfully withdrawn {amount} TNBC to {obj.withdrawal_address} \n Use `/user balance` to check your new balance.")
+                        else:
+                            embed = discord.Embed(title="Error!", description="Please try again later!!")
                     else:
                         embed = discord.Embed(title="Error!", description="Please try again later!!")
             else:
-                embed = discord.Embed(title="Error!", description="You cannot withdraw less than 3 TNBC!!")
+                embed = discord.Embed(title="Error!", description="You cannot withdraw less than 1 TNBC!!")
         else:
             embed = discord.Embed(title="Error!", description="Could not retrive fee info from the bank!!")
     else:
@@ -204,7 +208,7 @@ async def user_transactions(ctx):
     await ctx.send(embed=embed, hidden=True)
 
 
-@slash.subcommand(base="user", name="tip", description="Tip another user!!",
+@slash.subcommand(base="tip", name="new", description="Tip another user!!",
                   options=[
                       create_option(
                           name="amount",
@@ -220,9 +224,9 @@ async def user_transactions(ctx):
                       )
                   ]
                   )
-async def user_tip(ctx, amount: int, user):
+async def tip_new(ctx, amount: int, user):
 
-    await ctx.defer(hidden=True)
+    await ctx.defer()
 
     sender, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     recepient, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
@@ -235,8 +239,37 @@ async def user_tip(ctx, amount: int, user):
         recepient.balance += amount
         sender.save()
         recepient.save()
-        embed = discord.Embed(title="Successfully!!",
-                              description=f"Tipped {amount} to user {user}.")
+        UserTip.objects.create(sender=sender, recepient=recepient, amount=amount)
+        embed = discord.Embed(title="Success!!",
+                              description=f"{ctx.author.mention} tipped {user.mention} {amount} TNBC.")
+
+    await ctx.send(embed=embed)
+
+
+@slash.subcommand(base="tip", name="history", description="View tip history!!")
+async def tip_history(ctx):
+
+    await ctx.defer(hidden=True)
+    
+    obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+
+    if UserTip.objects.filter(Q(sender=obj) | Q(recepient=obj)).exists():
+
+        tips = (await sync_to_async(UserTip.objects.filter)(Q(sender=obj) | Q(recepient=obj))).order_by('-created_at')[:5]
+        
+        embed = discord.Embed()
+
+        for tip in tips:
+
+            sender = await client.fetch_user(int(tip.sender.discord_id))
+            recepient = await client.fetch_user(int(tip.recepient.discord_id))
+
+            embed.add_field(name="Sender", value=sender.mention)
+            embed.add_field(name="Recepient", value=recepient.mention)
+            embed.add_field(name="Amount", value=tip.amount)
+    
+    else:
+        embed = discord.Embed(title="Error!!", description="404 Not Found.")
 
     await ctx.send(embed=embed, hidden=True)
 
