@@ -239,6 +239,8 @@ async def user_profile(ctx, user: discord.Member = None):
     embed.add_field(name='TNBC lost in challenges', value=f"{user_profile[0].total_lost_in_challenges}")
     embed.add_field(name='TNBC won in tournaments', value=f"{user_profile[0].total_won_in_tournaments}")
     embed.add_field(name='Total Times Referred', value=f"{user_profile[0].total_referred}")
+    embed.add_field(name='Total Tip Sent', value=f"{user_profile[0].total_tip_sent}")
+    embed.add_field(name='Total Tip Received', value=f"{user_profile[0].total_tip_received}")
 
     await ctx.send(embed=embed, hidden=True)
     
@@ -275,6 +277,14 @@ async def tip_new(ctx, amount: int, user):
         sender.save()
         recepient.save()
         UserTip.objects.create(sender=sender, recepient=recepient, amount=amount)
+
+        sender_profile = MaakayUser.objects.get_or_create(user=sender)
+        recepient_profile = MaakayUser.objects.get_or_create(user=recepient)
+        sender_profile[0].total_tip_sent += amount + settings.MAAKAY_TIP_FEE
+        sender_profile[0].save()
+        recepient_profile[0].total_tip_received += amount
+        recepient_profile[0].save()
+
         embed = discord.Embed(title="Success!!",
                               description=f"{ctx.author.mention} tipped {user.mention} {amount} TNBC.")
 

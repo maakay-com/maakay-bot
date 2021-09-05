@@ -19,6 +19,9 @@ class MaakayUser(models.Model):
     total_challenges_won = models.IntegerField(default=0)
     total_referred = models.IntegerField(default=0)
 
+    total_tip_sent = models.IntegerField(default=0)
+    total_tip_received = models.IntegerField(default=0)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
