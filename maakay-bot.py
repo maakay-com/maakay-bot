@@ -71,29 +71,8 @@ async def user_deposit(ctx):
     embed.add_field(name='Address', value=settings.ACCOUNT_NUMBER, inline=False)
     embed.add_field(name='MEMO (MEMO is required, or you will lose your coins)', value=obj.memo, inline=False)
 
-    await ctx.send(embed=embed, hidden=True, components=[create_actionrow(create_button(custom_id="chain_scan", style=ButtonStyle.green, label="Sent? Scan Chain"))])
-
-
-@slash.component_callback()
-async def chain_scan(ctx: ComponentContext):
-
-    await ctx.defer(hidden=True)
-
-    scan_chain()
-
-    # check_confirmation()
-
-    match_transaction()
-
-    obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
-
-    embed = discord.Embed(title="Scan Completed")
-    embed.add_field(name='New Balance', value=obj.balance)
-    embed.add_field(name='Locked Amount', value=obj.locked)
-    embed.add_field(name='Available Balance', value=obj.get_available_balance())
-
-    await ctx.send(embed=embed, hidden=True, components=[create_actionrow(create_button(custom_id="chain_scan", style=ButtonStyle.green, label="Scan Again?"))])
-
+    await ctx.send(embed=embed, hidden=True, components=[create_actionrow(create_button(custom_id="chain-scan", style=ButtonStyle.green, label="Sent? Scan Chain"))])
+    
 
 @slash.subcommand(base="user", name="set_withdrawal_address", description="Set new withdrawal address!!",
                   options=[
@@ -378,17 +357,17 @@ async def challenge_new(ctx, title: str, amount: int, contender: discord.Member,
 @client.event
 async def on_component(ctx: ComponentContext):
 
-    await ctx.defer()
-
     button = ctx.custom_id.split('_')
-
-    obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
     button_type = button[0]
 
-    embed = discord.Embed()
-
     if button_type == "challenge":
+
+        await ctx.defer()
+
+        embed = discord.Embed()
+
+        obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
         challenge_uuid = button[2]
 
@@ -458,6 +437,25 @@ async def on_component(ctx: ComponentContext):
         else:
             embed.add_field(name="Error!", value="The challenge is already underway/ completed or cancelled.")
             await ctx.send(embed=embed, hidden=True)
+
+    elif button_type == "chain-scan":
+
+        await ctx.defer(hidden=True)
+        
+        scan_chain()
+
+        # check_confirmation()
+
+        match_transaction()
+
+        obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+
+        embed = discord.Embed(title="Scan Completed")
+        embed.add_field(name='New Balance', value=obj.balance)
+        embed.add_field(name='Locked Amount', value=obj.locked)
+        embed.add_field(name='Available Balance', value=obj.get_available_balance())
+
+        await ctx.send(embed=embed, hidden=True, components=[create_actionrow(create_button(custom_id="chain-scan", style=ButtonStyle.green, label="Scan Again?"))])
 
 
 @slash.slash(name="kill", description="Kill the bot!!")
