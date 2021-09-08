@@ -11,6 +11,16 @@ class Challenge(models.Model):
     ONGOING = 'ONGOING'
     CANCELLED = 'CANCELLED'
     COMPLETED = 'COMPLETED'
+    
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"
+
+    acceptance_status = [
+        (PENDING, 'Pending'),
+        (ACCEPTED, 'Accepted'),
+        (REJECTED, 'Rejected')
+    ]
 
     status_choices = [
         (NEW, 'New'),
@@ -28,10 +38,10 @@ class Challenge(models.Model):
     amount = models.IntegerField()
     title = models.CharField(max_length=255)
 
-    contender_accepted = models.BooleanField(default=False)
-    referee_accepted = models.BooleanField(default=False)
+    contender_status = models.CharField(max_length=255, choices=acceptance_status, default="PENDING")
+    referee_status = models.CharField(max_length=255, choices=acceptance_status, default="PENDING")
 
-    status = models.CharField(max_length=255, choices=status_choices)
+    status = models.CharField(max_length=255, choices=status_choices, default="NEW")
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

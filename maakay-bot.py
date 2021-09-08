@@ -26,6 +26,7 @@ from core.models.users import User, UserTransactionHistory
 from core.utils.scan_chain import match_transaction, check_confirmation, scan_chain
 from core.utils.send_tnbc import estimate_fee, withdraw_tnbc
 from maakay.models.users import UserTip, MaakayUser
+from maakay.models.challenges import Challenge
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
@@ -80,7 +81,7 @@ async def chain_scan(ctx: ComponentContext):
 
     scan_chain()
 
-    check_confirmation()
+    # check_confirmation()
 
     match_transaction()
 
@@ -261,7 +262,7 @@ async def user_profile(ctx, user: discord.Member = None):
                       )
                   ]
                   )
-async def tip_new(ctx, amount: int, user):
+async def tip_new(ctx, amount: int, user: discord.Member):
 
     await ctx.defer()
 
@@ -317,6 +318,146 @@ async def tip_history(ctx):
         embed = discord.Embed(title="Error!!", description="404 Not Found.")
 
     await ctx.send(embed=embed, hidden=True)
+
+
+@slash.subcommand(base="challenge", name="new", description="Create a new challenge!!",
+                  options=[
+                      create_option(
+                          name="title",
+                          description="The title of the challenge.",
+                          option_type=3,
+                          required=True
+                      ),
+                      create_option(
+                          name="amount",
+                          description="Enter TNBC amount you want to escrow.",
+                          option_type=4,
+                          required=True
+                      ),
+                      create_option(
+                          name="contender",
+                          description="Enter your escrow partner.",
+                          option_type=6,
+                          required=True
+                      ),
+                      create_option(
+                          name="referee",
+                          description="Enter your escrow partner.",
+                          option_type=6,
+                          required=True
+                      )
+                  ]
+                  )
+async def challenge_new(ctx, title: str, amount: int, contender: discord.Member, referee: discord.Member):
+
+    await ctx.defer()
+
+    challenger_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+    contender_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(contender.id))
+    referee_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(referee.id))
+
+    embed = discord.Embed()
+
+    if not (challenger_user == contender_user or contender_user == referee_user or referee_user == challenger_user):
+
+        if challenger_user.get_available_balance() >= amount:
+            challenger_user.locked += amount
+            challenger_user.save()
+            embed.add_field(name='Challenge Invitation!!', value=f"Hi {contender.mention}, {ctx.author.mention} is inviting you for {amount} TNBC challenge.", inline=False)
+            embed.add_field(name='Referee Invitation!!', value=f"Hi {referee.mention}, {ctx.author.mention} is inviting to be referee of challenge.")
+            challenge = await sync_to_async(Challenge.objects.create)(challenger=challenger_user, contender=contender_user, referee=referee_user, title=title, amount=amount)
+            await ctx.send(embed=embed, components=[create_actionrow(create_button(custom_id=f"challenge_accept_{challenge.uuid}", style=ButtonStyle.green, label="Accept"), create_button(custom_id=f"challenge_reject_{challenge.uuid}", style=ButtonStyle.red, label="Reject"))])
+        else:
+            embed.add_field(name="Error", value=f"You only have {challenger_user.get_available_balance()} TNBC availabe out of {amount}.")
+            await ctx.send(embed=embed, hidden=True)
+    else:
+        embed.add_field(name="Error!", value="Challenger, Contender and referee all must be different users.")
+        await ctx.send(embed=embed, hidden=True)
+
+
+@client.event
+async def on_component(ctx: ComponentContext):
+
+    await ctx.defer()
+
+    button = ctx.custom_id.split('_')
+
+    obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+
+    button_type = button[0]
+
+    embed = discord.Embed()
+
+    if button_type == "challenge":
+
+        challenge_uuid = button[2]
+
+        if Challenge.objects.filter(uuid=challenge_uuid, status=Challenge.NEW).exists():
+
+            button_action = button[1]
+
+            challenge = await sync_to_async(Challenge.objects.get)(uuid=challenge_uuid)
+
+            challenger = await client.fetch_user(int(challenge.challenger.discord_id))
+            contender = await client.fetch_user(int(challenge.contender.discord_id))
+            referee = await client.fetch_user(int(challenge.referee.discord_id))
+
+            if challenge.contender == obj:
+                if button_action == "accept":
+                    if obj.get_available_balance() >= challenge.amount:
+                        if challenge.referee_status == Challenge.ACCEPTED:
+                            challenge.status = Challenge.ONGOING
+                            challenge.contender.locked += challenge.amount
+                            challenge.contender.save()
+                        challenge.contender_status = Challenge.ACCEPTED
+                        challenge.save()
+                        embed.add_field(name="Challenge Detail!!", value="\u200b", inline=False)
+                        embed.add_field(name="Title", value=challenge.title)
+                        embed.add_field(name="Amount (TNBC)", value=challenge.amount)
+                        embed.add_field(name="Challenger", value=f"{challenger.mention}")
+                        embed.add_field(name="Contender", value=f"{contender.mention}")
+                        embed.add_field(name="Referee", value=f"{referee.mention}")
+                        embed.add_field(name="Status", value=challenge.status)
+                        await ctx.send(embed=embed)
+                    else:
+                        embed.add_field(name="Error!", value=f"You only have {obj.get_available_balance()} TNBC out of {challenge.amount} TNBC.\nPlease use `/user deposit` command to deposit TNBC.")
+                        await ctx.send(embed=embed)
+                else:
+                    challenge.contender_status = Challenge.REJECTED
+                    challenge.status = Challenge.CANCELLED
+                    challenge.save()
+                    challenge.challenger.locked -= challenge.amount
+                    challenge.challenger.save()
+                    embed.add_field(name="Rejected", value=f"Challenge rejected by contender {contender.mention}")
+                    await ctx.send(embed=embed)
+            elif challenge.referee == obj:
+                if button_action == "accept":
+                    if challenge.contender_status == Challenge.ACCEPTED:
+                        challenge.status = Challenge.ONGOING
+                    challenge.referee_status == Challenge.ACCEPTED
+                    challenge.save()
+                    embed.add_field(name="Challenge Detail!!", value="\u200b", inline=False)
+                    embed.add_field(name="Title", value=challenge.title)
+                    embed.add_field(name="Amount (TNBC)", value=challenge.amount)
+                    embed.add_field(name="Challenger", value=f"{challenger.mention}")
+                    embed.add_field(name="Contender", value=f"{contender.mention}")
+                    embed.add_field(name="Referee", value=f"{referee.mention}")
+                    embed.add_field(name="Status", value=challenge.status)
+                    await ctx.send(embed=embed)
+                else:
+                    challenge.referee_status = Challenge.REJECTED
+                    challenge.status = Challenge.CANCELLED
+                    challenge.save()
+                    challenge.challenger.locked -= challenge.amount
+                    challenge.challenger.save()
+                    embed.add_field(name="Rejected", value=f"Challenge rejected by referee {referee.mention}")
+                    await ctx.send(embed=embed)
+            else:
+                embed.add_field(name="Error!", value="You do not have correct permission to accept or reject this challenge.")
+                await ctx.send(embed=embed, hidden=True)
+        else:
+            embed.add_field(name="Error!", value="The challenge is already underway/ completed or cancelled.")
+            await ctx.send(embed=embed, hidden=True)
 
 
 @slash.slash(name="kill", description="Kill the bot!!")

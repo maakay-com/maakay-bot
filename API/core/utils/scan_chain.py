@@ -93,7 +93,7 @@ def scan_chain():
 
 def match_transaction():
 
-    confirmed_txs = Transaction.objects.filter(confirmation_status=Transaction.CONFIRMED,
+    confirmed_txs = Transaction.objects.filter(confirmation_status=Transaction.WAITING_CONFIRMATION,
                                                transaction_status=Transaction.NEW,
                                                direction=Transaction.INCOMING)
 
