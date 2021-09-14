@@ -223,14 +223,14 @@ async def user_profile(ctx, user: discord.Member = None):
     embed.add_field(name='Total Tip Received', value=f"{user_profile[0].total_tip_received}")
 
     await ctx.send(embed=embed, hidden=True)
-    
+
 
 @slash.subcommand(base="tip", name="new", description="Tip another user!!",
                   options=[
                       create_option(
                           name="amount",
                           description="Enter TNBC amount you want to escrow.",
-                          option_type=4,
+                          option_type=10,
                           required=True
                       ),
                       create_option(
@@ -241,32 +241,40 @@ async def user_profile(ctx, user: discord.Member = None):
                       )
                   ]
                   )
-async def tip_new(ctx, amount: int, user: discord.Member):
+async def tip_new(ctx, amount: float, user: discord.Member):
 
     await ctx.defer()
 
     sender, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     recepient, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
 
-    if sender.get_available_balance() < amount + settings.MAAKAY_TIP_FEE:
-        embed = discord.Embed(title="Inadequate Funds!!",
-                              description=f"You only have {sender.get_available_balance() - settings.MAAKAY_TIP_FEE} tippable TNBC available. \n Use `/user deposit` to deposit TNBC!!")
+    if sender != recepient:
+
+        total_amount = int(amount * 100000000)
+        total_amount_including_fees = amount * 100000000 + settings.MAAKAY_TIP_FEE
+
+        if sender.get_available_balance() < total_amount_including_fees:
+            embed = discord.Embed(title="Inadequate Funds!!",
+                                description=f"You only have {sender.get_available_balance() - settings.MAAKAY_TIP_FEE} tippable TNBC available. \n Use `/user deposit` to deposit TNBC!!")
+        else:
+            sender.balance -= total_amount_including_fees
+            recepient.balance += total_amount
+            sender.save()
+            recepient.save()
+            UserTip.objects.create(sender=sender, recepient=recepient, amount=total_amount)
+
+            sender_profile = MaakayUser.objects.get_or_create(user=sender)
+            recepient_profile = MaakayUser.objects.get_or_create(user=recepient)
+            sender_profile[0].total_tip_sent += total_amount_including_fees
+            sender_profile[0].save()
+            recepient_profile[0].total_tip_received += total_amount
+            recepient_profile[0].save()
+
+            embed = discord.Embed(title="Success!",
+                                description=f"{ctx.author.mention} tipped {user.mention} {total_amount/100000000} TNBC.")
     else:
-        sender.balance -= amount + settings.MAAKAY_TIP_FEE
-        recepient.balance += amount
-        sender.save()
-        recepient.save()
-        UserTip.objects.create(sender=sender, recepient=recepient, amount=amount)
-
-        sender_profile = MaakayUser.objects.get_or_create(user=sender)
-        recepient_profile = MaakayUser.objects.get_or_create(user=recepient)
-        sender_profile[0].total_tip_sent += amount + settings.MAAKAY_TIP_FEE
-        sender_profile[0].save()
-        recepient_profile[0].total_tip_received += amount
-        recepient_profile[0].save()
-
-        embed = discord.Embed(title="Success!!",
-                              description=f"{ctx.author.mention} tipped {user.mention} {amount} TNBC.")
+        embed = discord.Embed(title="Sorry!",
+                              description=f"We cannot let you tip yourself.")
 
     await ctx.send(embed=embed)
 
@@ -291,8 +299,8 @@ async def tip_history(ctx):
 
             embed.add_field(name="Sender", value=sender.mention)
             embed.add_field(name="Recepient", value=recepient.mention)
-            embed.add_field(name="Amount", value=tip.amount)
-    
+            embed.add_field(name="Amount", value=tip.get_decimal_amount())
+
     else:
         embed = discord.Embed(title="Error!!", description="404 Not Found.")
 

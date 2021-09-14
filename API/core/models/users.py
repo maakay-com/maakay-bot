@@ -86,7 +86,7 @@ class UserTransactionHistory(models.Model):
     def get_decimal_amount(self):
         amount = self.amount / 100000000
         rounded_amount = round(amount, 4)
-        return rounded_amount       
+        return rounded_amount
 
     def __str__(self):
         return f"User: {self.user} - {self.type} - {self.amount}"
