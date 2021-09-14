@@ -36,7 +36,7 @@ class Challenge(models.Model):
     contender = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='contender')
     referee = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='challenge_referee')
 
-    amount = models.IntegerField()
+    amount = models.BigIntegerField()
     title = models.CharField(max_length=255)
 
     contender_status = models.CharField(max_length=255, choices=acceptance_status, default="PENDING")

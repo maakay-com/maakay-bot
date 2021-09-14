@@ -62,7 +62,7 @@ def scan_chain():
 
             if scan_tracker.last_scanned < transaction_time and not transaction_exists:
 
-                amount = int(transaction['amount'])
+                amount = int(transaction['amount']) * 100000000
 
                 if transaction['recipient'] == settings.ACCOUNT_NUMBER:
                     direction = Transaction.INCOMING

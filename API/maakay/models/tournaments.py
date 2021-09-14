@@ -24,7 +24,7 @@ class Tournament(models.Model):
     title = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
     url = models.URLField(null=True, blank=True)
-    amount = models.IntegerField()
+    amount = models.BigIntegerField()
 
     referee = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='tournament_referee')
     hosted_by = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='hosted_by')

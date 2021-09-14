@@ -53,9 +53,9 @@ async def user_balance(ctx):
 
     embed = discord.Embed()
     embed.add_field(name='Withdrawal Address', value=obj.withdrawal_address, inline=False)
-    embed.add_field(name='Balance', value=obj.balance)
-    embed.add_field(name='Locked Amount', value=obj.locked)
-    embed.add_field(name='Available Balance', value=obj.get_available_balance())
+    embed.add_field(name='Balance', value=obj.get_decimal_balance())
+    embed.add_field(name='Locked Amount', value=obj.get_decimal_locked_amount())
+    embed.add_field(name='Available Balance', value=obj.get_decimal_available_balance())
 
     await ctx.send(embed=embed, hidden=True)
 

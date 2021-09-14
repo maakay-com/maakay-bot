@@ -11,16 +11,16 @@ class MaakayUser(models.Model):
 
     user = models.OneToOneField(User, on_delete=models.CASCADE)
 
-    total_won_in_challenges = models.IntegerField(default=0)
-    total_lost_in_challenges = models.IntegerField(default=0)
-    total_won_in_tournaments = models.IntegerField(default=0)
+    total_won_in_challenges = models.BigIntegerField(default=0)
+    total_lost_in_challenges = models.BigIntegerField(default=0)
+    total_won_in_tournaments = models.BigIntegerField(default=0)
 
     total_tournaments_won = models.IntegerField(default=0)
     total_challenges_won = models.IntegerField(default=0)
     total_referred = models.IntegerField(default=0)
 
-    total_tip_sent = models.IntegerField(default=0)
-    total_tip_received = models.IntegerField(default=0)
+    total_tip_sent = models.BigIntegerField(default=0)
+    total_tip_received = models.BigIntegerField(default=0)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
