@@ -128,9 +128,9 @@ async def user_withdraw(ctx, amount: int):
 
         if fee:
             if not amount < 1:
-                if obj.get_available_balance() < amount + fee:
+                if obj.get_int_available_balance() < amount + fee:
                     embed = discord.Embed(title="Inadequate Funds!!",
-                                          description=f"You only have {obj.get_available_balance() - fee} withdrawable TNBC (network fees included) available. \n Use `/user deposit` to deposit TNBC!!")
+                                          description=f"You only have {obj.get_int_available_balance() - fee} withdrawable TNBC (network fees included) available. \n Use `/user deposit` to deposit TNBC!!")
 
                 else:
                     block_response, fee = withdraw_tnbc(obj.withdrawal_address, amount, obj.memo)
@@ -146,9 +146,9 @@ async def user_withdraw(ctx, amount: int):
                                                             signature=block_response.json()['signature'],
                                                             block=block_response.json()['id'],
                                                             memo=obj.memo)
-                            obj.balance -= amount + fee
+                            obj.balance -= (amount + fee) * 100000000
                             obj.save()
-                            UserTransactionHistory.objects.create(user=obj, amount=amount + fee, type=UserTransactionHistory.WITHDRAW, transaction=txs)
+                            UserTransactionHistory.objects.create(user=obj, amount=(amount + fee) * 100000000, type=UserTransactionHistory.WITHDRAW, transaction=txs)
                             statistic = Statistic.objects.first()
                             statistic.total_balance -= (amount + fee)
                             statistic.save()
@@ -183,7 +183,7 @@ async def user_transactions(ctx):
 
         natural_day = humanize.naturalday(txs.created_at)
 
-        embed.add_field(name='\u200b', value=f"{txs.type} - {txs.amount} TNBC - {natural_day}", inline=False)
+        embed.add_field(name='\u200b', value=f"{txs.type} - {txs.get_decimal_amount()} TNBC - {natural_day}", inline=False)
 
     await ctx.send(embed=embed, hidden=True)
 
@@ -503,9 +503,9 @@ async def on_component(ctx: ComponentContext):
         obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
         embed = discord.Embed(title="Scan Completed")
-        embed.add_field(name='New Balance', value=obj.balance)
-        embed.add_field(name='Locked Amount', value=obj.locked)
-        embed.add_field(name='Available Balance', value=obj.get_available_balance())
+        embed.add_field(name='New Balance', value=obj.get_decimal_balance())
+        embed.add_field(name='Locked Amount', value=obj.get_decimal_locked_amount())
+        embed.add_field(name='Available Balance', value=obj.get_decimal_available_balance())
 
         await ctx.send(embed=embed, hidden=True, components=[create_actionrow(create_button(custom_id="chain-scan", style=ButtonStyle.green, label="Scan Again?"))])
 

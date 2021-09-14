@@ -32,6 +32,10 @@ class User(models.Model):
         available_balance = (self.balance - self.locked) / 100000000
         rounded_available_balance = round(available_balance, 4)
         return rounded_available_balance
+    
+    def get_int_available_balance(self):
+        available_balance = int((self.balance - self.locked) / 100000000)
+        return available_balance
 
     def __str__(self):
         return f"User: {self.discord_id}; Balance: {self.balance}; Available: {self.get_available_balance()}"
@@ -73,11 +77,16 @@ class UserTransactionHistory(models.Model):
 
     user = models.ForeignKey(User, on_delete=models.DO_NOTHING)
     type = models.CharField(max_length=255, choices=type_choices)
-    amount = models.IntegerField()
+    amount = models.BigIntegerField()
     transaction = models.ForeignKey(Transaction, on_delete=models.DO_NOTHING)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def get_decimal_amount(self):
+        amount = self.amount / 100000000
+        rounded_amount = round(amount, 4)
+        return rounded_amount       
 
     def __str__(self):
         return f"User: {self.user} - {self.type} - {self.amount}"
