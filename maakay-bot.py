@@ -329,8 +329,6 @@ async def tip_history(ctx):
                   )
 async def challenge_new(ctx, title: str, amount: int, contender: discord.Member, referee: discord.Member):
 
-    await ctx.defer()
-
     challenger_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     contender_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(contender.id))
     referee_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(referee.id))
@@ -353,6 +351,62 @@ async def challenge_new(ctx, title: str, amount: int, contender: discord.Member,
         embed.add_field(name="Error!", value="Challenger, Contender and referee all must be different users.")
         await ctx.send(embed=embed, hidden=True)
 
+@slash.subcommand(base="challenge", name="reward", description="Reward the challenge winner!!",
+                  options=[
+                      create_option(
+                          name="challenge_id",
+                          description="ID of challenge.",
+                          option_type=3,
+                          required=True
+                      ),
+                      create_option(
+                          name="user",
+                          description="Challenge winnner.",
+                          option_type=6,
+                          required=True
+                      )
+                  ]
+                  )
+async def challenge_reward(ctx, challenge_id: str, user: discord.Member):
+
+    referee, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+    winner, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
+
+    embed = discord.Embed()
+
+    # Check if the discord user is referee of the challenge
+    if Challenge.objects.filter(uuid_hex=challenge_id, referee=referee).exists():
+
+        challenge = await sync_to_async(Challenge.objects.get)(uuid_hex=challenge_id)
+
+        # Check if the winner is either the challenger or contender of the challenge
+        if challenge.challenger == winner or challenge.contender == winner:
+
+            # Check if challenger is winner
+            if challenge.challenger == winner:
+                challenge.contender.balance -= challenge.amount
+                challenge.contender.locked -= challenge.amount
+                challenge.contender.save()
+            else:
+                challenge.challenger.balance -= challenge.amount
+                challenge.challenger.locked -= challenge.amount
+                challenge.challenger.save()
+            
+            winner.balance += challenge.amount
+            winner.locked -= challenge.amount
+            winner.save()
+
+            embed.add_field(name="Success!", value=f"Successfully rewarded {user.mention} for the challenge.")
+            await ctx.send(embed=embed)
+
+        else:
+            embed.add_field(name="Error!", value="The winner must be participant of the challenge.")
+            await ctx.send(embed=embed, hidden=True)
+
+    else:
+        embed.add_field(name="Error!", value="You're not a referee of this challenge.")
+        await ctx.send(embed=embed, hidden=True)
+
 
 @client.event
 async def on_component(ctx: ComponentContext):
@@ -362,8 +416,6 @@ async def on_component(ctx: ComponentContext):
     button_type = button[0]
 
     if button_type == "challenge":
-
-        await ctx.defer()
 
         embed = discord.Embed()
 
@@ -385,12 +437,12 @@ async def on_component(ctx: ComponentContext):
                 if button_action == "accept":
                     if obj.get_available_balance() >= challenge.amount:
                         if challenge.referee_status == Challenge.ACCEPTED:
-                            challenge.status = Challenge.ONGOING
                             challenge.contender.locked += challenge.amount
                             challenge.contender.save()
+                            challenge.status = Challenge.ONGOING
                         challenge.contender_status = Challenge.ACCEPTED
                         challenge.save()
-                        embed.add_field(name="Challenge Detail!!", value="\u200b", inline=False)
+                        embed.add_field(name="Accepted", value=f"Challenge accepted by contender {contender.mention}", inline=False)
                         embed.add_field(name="Title", value=challenge.title)
                         embed.add_field(name="Amount (TNBC)", value=challenge.amount)
                         embed.add_field(name="Challenger", value=f"{challenger.mention}")
@@ -400,7 +452,7 @@ async def on_component(ctx: ComponentContext):
                         await ctx.send(embed=embed)
                     else:
                         embed.add_field(name="Error!", value=f"You only have {obj.get_available_balance()} TNBC out of {challenge.amount} TNBC.\nPlease use `/user deposit` command to deposit TNBC.")
-                        await ctx.send(embed=embed)
+                        await ctx.send(embed=embed, hidden=True)
                 else:
                     challenge.contender_status = Challenge.REJECTED
                     challenge.status = Challenge.CANCELLED
@@ -413,9 +465,9 @@ async def on_component(ctx: ComponentContext):
                 if button_action == "accept":
                     if challenge.contender_status == Challenge.ACCEPTED:
                         challenge.status = Challenge.ONGOING
-                    challenge.referee_status == Challenge.ACCEPTED
+                    challenge.referee_status = Challenge.ACCEPTED
                     challenge.save()
-                    embed.add_field(name="Challenge Detail!!", value="\u200b", inline=False)
+                    embed.add_field(name="Challenge Detail!!", value=f"Challenge accepted by referee {referee.mention}", inline=False)
                     embed.add_field(name="Title", value=challenge.title)
                     embed.add_field(name="Amount (TNBC)", value=challenge.amount)
                     embed.add_field(name="Challenger", value=f"{challenger.mention}")
@@ -430,7 +482,7 @@ async def on_component(ctx: ComponentContext):
                     challenge.challenger.locked -= challenge.amount
                     challenge.challenger.save()
                     embed.add_field(name="Rejected", value=f"Challenge rejected by referee {referee.mention}")
-                    await ctx.send(embed=embed)
+                    await ctx.send(embed=embed, hidden=True)
             else:
                 embed.add_field(name="Error!", value="You do not have correct permission to accept or reject this challenge.")
                 await ctx.send(embed=embed, hidden=True)
