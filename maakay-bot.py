@@ -271,7 +271,7 @@ async def tip_new(ctx, amount: float, user: discord.Member):
             recepient_profile[0].total_tip_received += total_amount
             recepient_profile[0].save()
 
-            await ctx.send(f"{ctx.author.mention} tipped {user.mention} {total_amount/100000000} TNBC.")
+            await ctx.send(f"{ctx.author.mention} tipped {user.mention} {amount} TNBC.")
 
     else:
         embed = discord.Embed(title="Sorry!", description=f"We cannot let you tip yourself.")
@@ -318,7 +318,7 @@ async def tip_history(ctx):
                       create_option(
                           name="amount",
                           description="Enter TNBC amount you want to escrow.",
-                          option_type=4,
+                          option_type=10,
                           required=True
                       ),
                       create_option(
@@ -335,7 +335,7 @@ async def tip_history(ctx):
                       )
                   ]
                   )
-async def challenge_new(ctx, title: str, amount: int, contender: discord.Member, referee: discord.Member):
+async def challenge_new(ctx, title: str, amount: float, contender: discord.Member, referee: discord.Member):
 
     challenger_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     contender_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(contender.id))
@@ -344,20 +344,23 @@ async def challenge_new(ctx, title: str, amount: int, contender: discord.Member,
     embed = discord.Embed()
 
     if not (challenger_user == contender_user or contender_user == referee_user or referee_user == challenger_user):
+        
+        total_amount = int(amount * 100000000)
 
-        if challenger_user.get_available_balance() >= amount:
-            challenger_user.locked += amount
+        if challenger_user.get_available_balance() >= total_amount:
+            challenger_user.locked += total_amount
             challenger_user.save()
             embed.add_field(name='Challenge Invitation!!', value=f"Hi {contender.mention}, {ctx.author.mention} is inviting you for {amount} TNBC challenge.", inline=False)
             embed.add_field(name='Referee Invitation!!', value=f"Hi {referee.mention}, {ctx.author.mention} is inviting to be referee of challenge.")
-            challenge = await sync_to_async(Challenge.objects.create)(challenger=challenger_user, contender=contender_user, referee=referee_user, title=title, amount=amount)
+            challenge = await sync_to_async(Challenge.objects.create)(challenger=challenger_user, contender=contender_user, referee=referee_user, title=title, amount=total_amount)
             await ctx.send(embed=embed, components=[create_actionrow(create_button(custom_id=f"challenge_accept_{challenge.uuid}", style=ButtonStyle.green, label="Accept"), create_button(custom_id=f"challenge_reject_{challenge.uuid}", style=ButtonStyle.red, label="Reject"))])
         else:
-            embed.add_field(name="Error", value=f"You only have {challenger_user.get_available_balance()} TNBC availabe out of {amount}.")
+            embed.add_field(name="Error", value=f"You only have {challenger_user.get_decimal_available_balance()} TNBC availabe out of {amount}.")
             await ctx.send(embed=embed, hidden=True)
     else:
         embed.add_field(name="Error!", value="Challenger, Contender and referee all must be different users.")
         await ctx.send(embed=embed, hidden=True)
+
 
 @slash.subcommand(base="challenge", name="reward", description="Reward the challenge winner!!",
                   options=[
@@ -452,14 +455,14 @@ async def on_component(ctx: ComponentContext):
                         challenge.save()
                         embed.add_field(name="Accepted", value=f"Challenge accepted by contender {contender.mention}", inline=False)
                         embed.add_field(name="Title", value=challenge.title)
-                        embed.add_field(name="Amount (TNBC)", value=challenge.amount)
+                        embed.add_field(name="Amount (TNBC)", value=challenge.get_decimal_amount())
                         embed.add_field(name="Challenger", value=f"{challenger.mention}")
                         embed.add_field(name="Contender", value=f"{contender.mention}")
                         embed.add_field(name="Referee", value=f"{referee.mention}")
                         embed.add_field(name="Status", value=challenge.status)
                         await ctx.send(embed=embed)
                     else:
-                        embed.add_field(name="Error!", value=f"You only have {obj.get_available_balance()} TNBC out of {challenge.amount} TNBC.\nPlease use `/user deposit` command to deposit TNBC.")
+                        embed.add_field(name="Error!", value=f"You only have {obj.get_decimal_available_balance()} TNBC out of {challenge.get_decimal_amount()} TNBC.\nPlease use `/user deposit` command to deposit TNBC.")
                         await ctx.send(embed=embed, hidden=True)
                 else:
                     challenge.contender_status = Challenge.REJECTED
@@ -475,9 +478,9 @@ async def on_component(ctx: ComponentContext):
                         challenge.status = Challenge.ONGOING
                     challenge.referee_status = Challenge.ACCEPTED
                     challenge.save()
-                    embed.add_field(name="Challenge Detail!!", value=f"Challenge accepted by referee {referee.mention}", inline=False)
+                    embed.add_field(name="Accepted", value=f"Challenge accepted by referee {referee.mention}", inline=False)
                     embed.add_field(name="Title", value=challenge.title)
-                    embed.add_field(name="Amount (TNBC)", value=challenge.amount)
+                    embed.add_field(name="Amount (TNBC)", value=challenge.get_decimal_amount())
                     embed.add_field(name="Challenger", value=f"{challenger.mention}")
                     embed.add_field(name="Contender", value=f"{contender.mention}")
                     embed.add_field(name="Referee", value=f"{referee.mention}")
