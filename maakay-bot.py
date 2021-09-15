@@ -200,7 +200,7 @@ async def user_transactions(ctx):
                   )
 async def user_profile(ctx, user: discord.Member = None):
 
-    await ctx.defer(hidden=True)
+    await ctx.defer()
 
     if user:
         obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
@@ -215,14 +215,13 @@ async def user_profile(ctx, user: discord.Member = None):
 
     embed.add_field(name='Total Challenges Won', value=f"{user_profile[0].total_challenges_won}")
     embed.add_field(name='Total Tournaments Won', value=f"{user_profile[0].total_tournaments_won}")
-    embed.add_field(name='TNBC won in challenges', value=f"{user_profile[0].total_won_in_challenges}")
-    embed.add_field(name='TNBC lost in challenges', value=f"{user_profile[0].total_lost_in_challenges}")
-    embed.add_field(name='TNBC won in tournaments', value=f"{user_profile[0].total_won_in_tournaments}")
+    embed.add_field(name='TNBC won in challenges', value=f"{user_profile[0].get_decimal_total_won_in_challenges()}")
+    embed.add_field(name='TNBC won in tournaments', value=f"{user_profile[0].get_decimal_total_won_in_tournaments()}")
     embed.add_field(name='Total Times Referred', value=f"{user_profile[0].total_referred}")
-    embed.add_field(name='Total Tip Sent', value=f"{user_profile[0].total_tip_sent}")
-    embed.add_field(name='Total Tip Received', value=f"{user_profile[0].total_tip_received}")
+    embed.add_field(name='Total Tip Sent', value=f"{user_profile[0].get_decimal_total_tip_sent()}")
+    embed.add_field(name='Total Tip Received', value=f"{user_profile[0].get_decimal_total_tip_received()}")
 
-    await ctx.send(embed=embed, hidden=True)
+    await ctx.send(embed=embed)
 
 
 @slash.subcommand(base="tip", name="new", description="Tip another user!!",
@@ -243,19 +242,21 @@ async def user_profile(ctx, user: discord.Member = None):
                   )
 async def tip_new(ctx, amount: float, user: discord.Member):
 
-    await ctx.defer()
-
     sender, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     recepient, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
 
     if sender != recepient:
 
         total_amount = int(amount * 100000000)
-        total_amount_including_fees = amount * 100000000 + settings.MAAKAY_TIP_FEE
+        total_amount_including_fees = total_amount + settings.MAAKAY_TIP_FEE
 
         if sender.get_available_balance() < total_amount_including_fees:
+            available_balace_including_fee = sender.get_available_balance() - settings.MAAKAY_TIP_FEE
+            decimal_available_balace_including_fee = available_balace_including_fee / 100000000
             embed = discord.Embed(title="Inadequate Funds!!",
-                                description=f"You only have {sender.get_available_balance() - settings.MAAKAY_TIP_FEE} tippable TNBC available. \n Use `/user deposit` to deposit TNBC!!")
+                                  description=f"You only have {decimal_available_balace_including_fee} tippable TNBC available. \n Use `/user deposit` to deposit TNBC!!")
+            await ctx.send(embed=embed, hidden=True)
+
         else:
             sender.balance -= total_amount_including_fees
             recepient.balance += total_amount
@@ -270,13 +271,12 @@ async def tip_new(ctx, amount: float, user: discord.Member):
             recepient_profile[0].total_tip_received += total_amount
             recepient_profile[0].save()
 
-            embed = discord.Embed(title="Success!",
-                                description=f"{ctx.author.mention} tipped {user.mention} {total_amount/100000000} TNBC.")
-    else:
-        embed = discord.Embed(title="Sorry!",
-                              description=f"We cannot let you tip yourself.")
+            await ctx.send(f"{ctx.author.mention} tipped {user.mention} {total_amount/100000000} TNBC.")
 
-    await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(title="Sorry!", description=f"We cannot let you tip yourself.")
+        embed.set_image(url=f"https://i.ibb.co/YWdpD99/e33.jpg")
+        await ctx.send(embed=embed, hidden=True)
 
 
 @slash.subcommand(base="tip", name="history", description="View tip history!!")
