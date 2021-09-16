@@ -10,7 +10,6 @@ ALLOWED_HOSTS = ['*']
 BANK_IP = '13.233.77.254'
 MIN_TNBC_ALLOWED = 100  # In TNBC
 
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
