@@ -10,7 +10,7 @@ from ..models.transactions import Transaction
 from ..models.statistics import Statistic
 from ..models.users import User, UserTransactionHistory
 
-TNBC_TRANSACTION_SCAN_URL = f"http://{settings.BANK_IP}/bank_transactions?account_number={settings.ACCOUNT_NUMBER}&block__sender=&fee=&recipient="
+TNBC_TRANSACTION_SCAN_URL = f"http://{settings.BANK_IP}/bank_transactions?account_number={settings.MAAKAY_PAYMENT_ACCOUNT_NUMBER}&block__sender=&fee=&recipient="
 
 
 def check_confirmation():
@@ -32,14 +32,18 @@ def check_confirmation():
                 txs.confirmation_status = Transaction.CONFIRMED
                 txs.save()
                 if txs.direction == Transaction.INCOMING:
-                    Statistic.objects.all().update(total_balance=F('total_balance') + txs.amount)
+                    statistics, created = Statistic.objects.get_or_create(title="main")
+                    statistics.total_balance += txs.amount
+                    statistics.save()
                 else:
-                    Statistic.objects.all().update(total_balance=F('total_balance') - txs.amount - settings.TNBC_TRANSACTION_FEE)
+                    statistics, created = Statistic.objects.get_or_create(title="main")
+                    statistics.total_balance -= txs.amount - settings.TNBC_TRANSACTION_FEE
+                    statistics.save()
 
 
 def scan_chain():
 
-    scan_tracker = ScanTracker.objects.first()
+    scan_tracker, created = ScanTracker.objects.get_or_create(title="main")
 
     next_url = TNBC_TRANSACTION_SCAN_URL
 
@@ -64,7 +68,7 @@ def scan_chain():
 
                 amount = int(transaction['amount']) * 100000000
 
-                if transaction['recipient'] == settings.ACCOUNT_NUMBER:
+                if transaction['recipient'] == settings.MAAKAY_PAYMENT_ACCOUNT_NUMBER:
                     direction = Transaction.INCOMING
                     account_number = transaction['block']['sender']
                 else:

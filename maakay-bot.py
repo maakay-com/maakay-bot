@@ -60,7 +60,7 @@ async def user_balance(ctx):
     await ctx.send(embed=embed, hidden=True)
 
 
-@slash.subcommand(base="user", name="deposit", description="Deposit TNBC into your maakay account.")
+@slash.subcommand(base="deposit", name="tnbc", description="Deposit TNBC into your maakay account.")
 async def user_deposit(ctx):
 
     await ctx.defer(hidden=True)
@@ -68,11 +68,11 @@ async def user_deposit(ctx):
     obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
     embed = discord.Embed(title="Send TNBC to the address with memo!!")
-    embed.add_field(name='Address', value=settings.ACCOUNT_NUMBER, inline=False)
+    embed.add_field(name='Address', value=settings.MAAKAY_PAYMENT_ACCOUNT_NUMBER, inline=False)
     embed.add_field(name='MEMO (MEMO is required, or you will lose your coins)', value=obj.memo, inline=False)
 
     await ctx.send(embed=embed, hidden=True, components=[create_actionrow(create_button(custom_id="chain-scan", style=ButtonStyle.green, label="Sent? Scan Chain"))])
-    
+
 
 @slash.subcommand(base="set_withdrawal_address", name="tnbc", description="Set a new withdrawal address.",
                   options=[
