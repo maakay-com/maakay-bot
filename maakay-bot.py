@@ -44,7 +44,7 @@ async def on_ready():
     await client.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="/help"))
 
 
-@slash.subcommand(base="user", name="balance", description="Check User Balance!!")
+@slash.slash(name="balance", description="Check User Balance.")
 async def user_balance(ctx):
 
     await ctx.defer(hidden=True)
@@ -60,7 +60,7 @@ async def user_balance(ctx):
     await ctx.send(embed=embed, hidden=True)
 
 
-@slash.subcommand(base="user", name="deposit", description="Deposit TNBC into your maakay account!!")
+@slash.subcommand(base="user", name="deposit", description="Deposit TNBC into your maakay account.")
 async def user_deposit(ctx):
 
     await ctx.defer(hidden=True)
@@ -74,7 +74,7 @@ async def user_deposit(ctx):
     await ctx.send(embed=embed, hidden=True, components=[create_actionrow(create_button(custom_id="chain-scan", style=ButtonStyle.green, label="Sent? Scan Chain"))])
     
 
-@slash.subcommand(base="user", name="set_withdrawal_address", description="Set new withdrawal address!!",
+@slash.subcommand(base="set_withdrawal_address", name="tnbc", description="Set a new withdrawal address.",
                   options=[
                       create_option(
                           name="address",
@@ -106,7 +106,7 @@ async def user_setwithdrawaladdress(ctx, address: str):
     await ctx.send(embed=embed, hidden=True)
 
 
-@slash.subcommand(base="user", name="withdraw", description="Withdraw TNBC into your account!!",
+@slash.subcommand(base="withdraw", name="tnbc", description="Withdraw TNBC into your account!!",
                   options=[
                       create_option(
                           name="amount",
@@ -141,19 +141,20 @@ async def user_withdraw(ctx, amount: int):
                                                             transaction_status=Transaction.IDENTIFIED,
                                                             direction=Transaction.OUTGOING,
                                                             account_number=obj.withdrawal_address,
-                                                            amount=amount,
-                                                            fee=fee,
+                                                            amount=amount * 100000000,
+                                                            fee=fee * 100000000,
                                                             signature=block_response.json()['signature'],
                                                             block=block_response.json()['id'],
                                                             memo=obj.memo)
-                            obj.balance -= (amount + fee) * 100000000
+                            converted_amount_plus_fee =  (amount + fee) * 100000000
+                            obj.balance -= converted_amount_plus_fee
                             obj.save()
-                            UserTransactionHistory.objects.create(user=obj, amount=(amount + fee) * 100000000, type=UserTransactionHistory.WITHDRAW, transaction=txs)
+                            UserTransactionHistory.objects.create(user=obj, amount=converted_amount_plus_fee, type=UserTransactionHistory.WITHDRAW, transaction=txs)
                             statistic = Statistic.objects.first()
-                            statistic.total_balance -= (amount + fee)
+                            statistic.total_balance -= converted_amount_plus_fee
                             statistic.save()
                             embed = discord.Embed(title="Coins Withdrawn!",
-                                                description=f"Successfully withdrawn {amount} TNBC to {obj.withdrawal_address} \n Use `/user balance` to check your new balance.")
+                                                  description=f"Successfully withdrawn {amount} TNBC to {obj.withdrawal_address} \n Use `/user balance` to check your new balance.")
                         else:
                             embed = discord.Embed(title="Error!", description="Please try again later!!")
                     else:
@@ -168,7 +169,7 @@ async def user_withdraw(ctx, amount: int):
     await ctx.send(embed=embed, hidden=True)
 
 
-@slash.subcommand(base="user", name="transactions", description="Check Transaction History!!")
+@slash.subcommand(base="transactions", name="tnbc", description="Check Transaction History!!")
 async def user_transactions(ctx):
 
     await ctx.defer(hidden=True)
@@ -188,7 +189,7 @@ async def user_transactions(ctx):
     await ctx.send(embed=embed, hidden=True)
 
 
-@slash.subcommand(base="user", name="profile", description="Check the user profile!!",
+@slash.slash(name="profile", description="Check the user profile!!",
                   options=[
                       create_option(
                           name="user",
@@ -224,7 +225,7 @@ async def user_profile(ctx, user: discord.Member = None):
     await ctx.send(embed=embed)
 
 
-@slash.subcommand(base="tip", name="new", description="Tip another user!!",
+@slash.subcommand(base="tip", name="tnbc", description="Tip another user!!",
                   options=[
                       create_option(
                           name="amount",
@@ -275,7 +276,7 @@ async def tip_new(ctx, amount: float, user: discord.Member):
 
     else:
         embed = discord.Embed(title="Sorry!", description=f"We cannot let you tip yourself.")
-        embed.set_image(url=f"https://i.ibb.co/YWdpD99/e33.jpg")
+        embed.set_image(url="https://i.ibb.co/YWdpD99/e33.jpg")
         await ctx.send(embed=embed, hidden=True)
 
 
