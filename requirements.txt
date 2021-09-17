@@ -11,6 +11,7 @@ discord.py==1.7.3
 Django==3.2.7
 djangorestframework==3.12.4
 flake8==3.9.2
+humanize==3.11.0
 idna==3.2
 importlib-metadata==4.8.1
 mccabe==0.6.1
