@@ -7,13 +7,11 @@ from core.models.users import User
 
 class Tournament(models.Model):
 
-    NEW = 'NEW'
     ONGOING = 'ONGOING'
     CANCELLED = 'CANCELLED'
     COMPLETED = 'COMPLETED'
 
     status_choices = [
-        (NEW, 'New'),
         (ONGOING, 'Ongoing'),
         (CANCELLED, 'Cancelled'),
         (COMPLETED, 'Completed')
@@ -26,11 +24,10 @@ class Tournament(models.Model):
     url = models.URLField(null=True, blank=True)
     amount = models.BigIntegerField()
 
-    referee = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='tournament_referee')
     hosted_by = models.ForeignKey(User, on_delete=models.DO_NOTHING, related_name='hosted_by')
     winner = models.ForeignKey(User, on_delete=models.DO_NOTHING, blank=True, null=True, related_name='winner')
 
-    status = models.CharField(max_length=255, choices=status_choices)
+    status = models.CharField(max_length=255, choices=status_choices, default='ONGOING')
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

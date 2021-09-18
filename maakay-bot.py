@@ -27,6 +27,7 @@ from core.utils.scan_chain import match_transaction, check_confirmation, scan_ch
 from core.utils.send_tnbc import estimate_fee, withdraw_tnbc
 from maakay.models.users import UserTip, MaakayUser
 from maakay.models.challenges import Challenge
+from maakay.models.tournaments import Tournament
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
@@ -418,6 +419,70 @@ async def challenge_reward(ctx, challenge_id: str, user: discord.Member):
     else:
         embed.add_field(name="Error!", value="You're not a referee of this challenge.")
         await ctx.send(embed=embed, hidden=True)
+
+
+@slash.slash(name="tournament", description="Create a new tournament!!",
+                  options=[
+                      create_option(
+                          name="title",
+                          description="The title of the tournament.",
+                          option_type=3,
+                          required=True
+                      ),
+                      create_option(
+                          name="description",
+                          description="More info about the tournament.",
+                          option_type=3,
+                          required=True
+                      ),
+                      create_option(
+                          name="amount",
+                          description="Enter TNBC amount you want to escrow.",
+                          option_type=10,
+                          required=True
+                      ),
+                      create_option(
+                          name="url",
+                          description="Here the users will get more info.",
+                          option_type=3,
+                          required=False
+                      )
+                  ]
+                  )
+async def tournament_new(ctx, title: str, description: str, amount: float, url: str = None):
+
+    await ctx.defer(hidden=True)
+
+    total_amount = int(amount * 100000000)
+
+    discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+
+    if total_amount < settings.MAAKAY_MINIMUM_TOURNAMENT_AMOUNT:
+        embed = discord.Embed(title="Sorry",
+                              description=f"You cannot create tournaments of less than {settings.MAAKAY_MINIMUM_TOURNAMENT_AMOUNT / 100000000} TNBC.")
+        await ctx.send(embed=embed, hidden=True)
+    else:
+        if discord_user.get_available_balance() < total_amount:
+            embed = discord.Embed(title="Sorry",
+                                  description=f"You do not have enough maakay balance avalable.\nUse /deposit command to deposit TNBC.")
+            await ctx.send(embed=embed, hidden=True)
+        else:
+
+            tournament_channel = client.get_channel(int(settings.MAAKAY_TOURNAMENT_CHANNEL_ID))
+
+            tournament_embed = discord.Embed(title=title, description=description)
+            tournament_embed.add_field(name="Reward (TNBC)", value=amount)
+            tournament_embed.add_field(name="More info", value=url)
+            tournament_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+
+            await tournament_channel.send(embed=tournament_embed)
+
+            Tournament.objects.create(title=title, description=description, url=url, amount=total_amount, hosted_by=discord_user)
+
+            discord_user.locked += total_amount
+            discord_user.save()
+
+            await ctx.send("Tournament created successfully.", hidden=True)
 
 
 @client.event
