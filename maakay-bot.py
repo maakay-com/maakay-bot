@@ -250,10 +250,10 @@ async def tip_new(ctx, amount: float, user: discord.Member):
     if sender != recepient:
 
         total_amount = int(amount * 100000000)
-        total_amount_including_fees = total_amount + settings.MAAKAY_TIP_FEE
+        total_amount_including_fees = total_amount + settings.TIP_FEE
 
         if sender.get_available_balance() < total_amount_including_fees:
-            available_balace_including_fee = sender.get_available_balance() - settings.MAAKAY_TIP_FEE
+            available_balace_including_fee = sender.get_available_balance() - settings.TIP_FEE
             decimal_available_balace_including_fee = available_balace_including_fee / 100000000
             embed = discord.Embed(title="Inadequate Funds!!",
                                   description=f"You only have {decimal_available_balace_including_fee} tippable TNBC available. \n Use `/user deposit` to deposit TNBC!!")
@@ -346,18 +346,22 @@ async def challenge_new(ctx, title: str, amount: float, contender: discord.Membe
     embed = discord.Embed()
 
     if not (challenger_user == contender_user or contender_user == referee_user or referee_user == challenger_user):
-        
+
         total_amount = int(amount * 100000000)
 
-        if challenger_user.get_available_balance() >= total_amount:
-            challenger_user.locked += total_amount
-            challenger_user.save()
-            embed.add_field(name='Challenge Invitation!!', value=f"Hi {contender.mention}, {ctx.author.mention} is inviting you for {amount} TNBC challenge.", inline=False)
-            embed.add_field(name='Referee Invitation!!', value=f"Hi {referee.mention}, {ctx.author.mention} is inviting to be referee of challenge.")
-            challenge = await sync_to_async(Challenge.objects.create)(challenger=challenger_user, contender=contender_user, referee=referee_user, title=title, amount=total_amount)
-            await ctx.send(embed=embed, components=[create_actionrow(create_button(custom_id=f"challenge_accept_{challenge.uuid}", style=ButtonStyle.green, label="Accept"), create_button(custom_id=f"challenge_reject_{challenge.uuid}", style=ButtonStyle.red, label="Reject"))])
+        if total_amount >= settings.MINIMUL_CHALLENGE_AMOUNT:
+            if challenger_user.get_available_balance() >= total_amount:
+                challenger_user.locked += total_amount
+                challenger_user.save()
+                embed.add_field(name='Challenge Invitation!!', value=f"Hi {contender.mention}, {ctx.author.mention} is inviting you for {amount} TNBC challenge.", inline=False)
+                embed.add_field(name='Referee Invitation!!', value=f"Hi {referee.mention}, {ctx.author.mention} is inviting to be referee of challenge.")
+                challenge = await sync_to_async(Challenge.objects.create)(challenger=challenger_user, contender=contender_user, referee=referee_user, title=title, amount=total_amount)
+                await ctx.send(embed=embed, components=[create_actionrow(create_button(custom_id=f"challenge_accept_{challenge.uuid}", style=ButtonStyle.green, label="Accept"), create_button(custom_id=f"challenge_reject_{challenge.uuid}", style=ButtonStyle.red, label="Reject"))])
+            else:
+                embed.add_field(name="Error", value=f"You only have {challenger_user.get_decimal_available_balance()} TNBC availabe out of {amount}.")
+                await ctx.send(embed=embed, hidden=True)
         else:
-            embed.add_field(name="Error", value=f"You only have {challenger_user.get_decimal_available_balance()} TNBC availabe out of {amount}.")
+            embed.add_field(name="Error!", value=f"You can not challenge less than {settings.MINIMUL_CHALLENGE_AMOUNT / settings.TNBC_MULTIPLICATION_FACTOR} TNBC.")
             await ctx.send(embed=embed, hidden=True)
     else:
         embed.add_field(name="Error!", value="Challenger, Contender and referee all must be different users.")
@@ -405,7 +409,7 @@ async def challenge_reward(ctx, challenge_id: str, user: discord.Member):
                 challenge.challenger.locked -= challenge.amount
                 challenge.challenger.save()
             
-            winner.balance += challenge.amount
+            winner.balance += challenge.amount - settings.CHALLENGE_FEE
             winner.locked -= challenge.amount
             winner.save()
 
@@ -457,9 +461,9 @@ async def tournament_new(ctx, title: str, description: str, amount: float, url: 
 
     discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
-    if total_amount < settings.MAAKAY_MINIMUM_TOURNAMENT_AMOUNT:
+    if total_amount < settings.MINIMUM_TOURNAMENT_AMOUNT:
         embed = discord.Embed(title="Sorry",
-                              description=f"You cannot create tournaments of less than {settings.MAAKAY_MINIMUM_TOURNAMENT_AMOUNT / 100000000} TNBC.")
+                              description=f"You cannot create tournaments of less than {settings.MINIMUM_TOURNAMENT_AMOUNT / 100000000} TNBC.")
         await ctx.send(embed=embed, hidden=True)
     else:
         if discord_user.get_available_balance() < total_amount:
@@ -468,7 +472,7 @@ async def tournament_new(ctx, title: str, description: str, amount: float, url: 
             await ctx.send(embed=embed, hidden=True)
         else:
 
-            tournament_channel = client.get_channel(int(settings.MAAKAY_TOURNAMENT_CHANNEL_ID))
+            tournament_channel = client.get_channel(int(settings.TOURNAMENT_CHANNEL_ID))
 
             tournament_embed = discord.Embed(title=title, description=description)
             tournament_embed.add_field(name="Reward (TNBC)", value=amount)
@@ -515,7 +519,7 @@ async def tournament_reward(ctx, torunament_id: str, user: discord.Member):
             tournament.status = Tournament.COMPLETED
             tournament.winner = winner
             tournament.save()
-            winner.balance += tournament.amount
+            winner.balance += tournament.amount - settings.TOURNAMENT_FEE
             winner.save()
             embed.add_field(name="Success!", value="The tournament is rewarded successfully.")
             await ctx.send(embed=embed, hidden=True)
@@ -584,6 +588,8 @@ async def on_component(ctx: ComponentContext):
                 if button_action == "accept":
                     if challenge.contender_status == Challenge.ACCEPTED:
                         challenge.status = Challenge.ONGOING
+                        challenge.contender.locked += challenge.amount
+                        challenge.contender.save()
                     challenge.referee_status = Challenge.ACCEPTED
                     challenge.save()
                     embed.add_field(name="Accepted", value=f"Challenge accepted by referee {referee.mention}", inline=False)
@@ -604,9 +610,11 @@ async def on_component(ctx: ComponentContext):
                     await ctx.send(embed=embed, hidden=True)
             else:
                 embed.add_field(name="Error!", value="You do not have correct permission to accept or reject this challenge.")
+                embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
                 await ctx.send(embed=embed, hidden=True)
         else:
             embed.add_field(name="Error!", value="The challenge is already underway/ completed or cancelled.")
+            embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
             await ctx.send(embed=embed, hidden=True)
 
     elif button_type == "chain-scan":
