@@ -364,7 +364,7 @@ async def challenge_new(ctx, title: str, amount: float, contender: discord.Membe
         await ctx.send(embed=embed, hidden=True)
 
 
-@slash.subcommand(base="challenge", name="reward", description="Reward the challenge winner!!",
+@slash.subcommand(base="reward", name="challenge", description="Reward the challenge winner!!",
                   options=[
                       create_option(
                           name="challenge_id",
@@ -483,6 +483,48 @@ async def tournament_new(ctx, title: str, description: str, amount: float, url: 
             discord_user.save()
 
             await ctx.send("Tournament created successfully.", hidden=True)
+
+
+@slash.subcommand(base="reward", name="torunament", description="Reward the challenge winner!!",
+                  options=[
+                      create_option(
+                          name="torunament_id",
+                          description="ID of challenge.",
+                          option_type=3,
+                          required=True
+                      ),
+                      create_option(
+                          name="user",
+                          description="Challenge winnner.",
+                          option_type=6,
+                          required=True
+                      )
+                  ]
+                  )
+async def tournament_reward(ctx, torunament_id: str, user: discord.Member):
+
+    discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+    winner, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
+
+    embed = discord.Embed()
+
+    # Check if the discord user is referee of the reward
+    if Tournament.objects.filter(uuid_hex=torunament_id, hosted_by=discord_user).exists():
+        if Tournament.objects.filter(uuid_hex=torunament_id, status=Tournament.ONGOING).exists():
+            tournament = await sync_to_async(Tournament.objects.get)(uuid_hex=torunament_id)
+            tournament.status = Tournament.COMPLETED
+            tournament.winner = winner
+            tournament.save()
+            winner.balance += tournament.amount
+            winner.save()
+            embed.add_field(name="Success!", value="The tournament is rewarded successfully.")
+            await ctx.send(embed=embed, hidden=True)
+        else:
+            embed.add_field(name="Sorry!", value="The tournament is either cancelled or completed.")
+            await ctx.send(embed=embed, hidden=True)
+    else:
+        embed.add_field(name="Sorry!", value="You donot have correct permission to reward this challenge.")
+        await ctx.send(embed=embed, hidden=True)
 
 
 @client.event

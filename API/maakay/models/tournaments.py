@@ -18,6 +18,7 @@ class Tournament(models.Model):
     ]
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
+    uuid_hex = models.CharField(max_length=255, unique=True)
 
     title = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
@@ -34,3 +35,25 @@ class Tournament(models.Model):
 
     def __str__(self):
         return f'Title: {self.title}; Amount: {self.amount}; Status: {self.status}'
+
+
+# generate a random memo and check if its already taken.
+# If taken, generate another memo again until we find a valid memo
+def generate_hex_uuid(instance):
+
+    while True:
+
+        uuid_hex = f'{uuid.uuid4().hex}'
+
+        if not Tournament.objects.filter(uuid_hex=uuid_hex).exists():
+            return uuid_hex
+
+
+def pre_save_post_receiver(sender, instance, *args, **kwargs):
+
+    if not instance.uuid_hex:
+        instance.uuid_hex = generate_hex_uuid(instance)
+
+
+# save the memo before the User model is saved with the unique memo
+models.signals.pre_save.connect(pre_save_post_receiver, sender=Tournament)
