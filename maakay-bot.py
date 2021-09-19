@@ -19,7 +19,7 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, F
 from core.models.transactions import Transaction
 from core.models.statistics import Statistic
 from core.models.users import User, UserTransactionHistory
@@ -411,6 +411,8 @@ async def challenge_reward(ctx, challenge_id: str, user: discord.Member):
             
             winner.balance += challenge.amount - settings.CHALLENGE_FEE
             winner.locked -= challenge.amount
+            MaakayUser.objects.filter(user=winner).update(total_won_in_challenges=F('total_won_in_challenges') + challenge.amount - settings.CHALLENGE_FEE,
+                                                          total_challenges_won=F('total_challenges_won') + 1)
             winner.save()
 
             embed.add_field(name="Success!", value=f"Successfully rewarded {user.mention} for the challenge.")
@@ -520,6 +522,8 @@ async def tournament_reward(ctx, torunament_id: str, user: discord.Member):
             tournament.winner = winner
             tournament.save()
             winner.balance += tournament.amount - settings.TOURNAMENT_FEE
+            MaakayUser.objects.filter(user=winner).update(total_won_in_tournaments=F('total_won_in_tournaments') + tournament.amount - settings.TOURNAMENT_FEE,
+                                                          total_tournaments_won=F('total_tournaments_won') + 1)
             winner.save()
             embed.add_field(name="Success!", value="The tournament is rewarded successfully.")
             await ctx.send(embed=embed, hidden=True)
