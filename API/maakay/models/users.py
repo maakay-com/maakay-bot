@@ -26,13 +26,13 @@ class MaakayUser(models.Model):
 
     def get_decimal_total_won_in_challenges(self):
         return self.total_won_in_challenges / 100000000
-    
+
     def get_decimal_total_won_in_tournaments(self):
         return self.total_won_in_tournaments / 100000000
-    
+
     def get_decimal_total_tip_sent(self):
         return self.total_tip_sent / 100000000
-    
+
     def get_decimal_total_tip_received(self):
         return self.total_tip_received / 100000000
 

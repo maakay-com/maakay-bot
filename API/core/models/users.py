@@ -32,7 +32,7 @@ class User(models.Model):
         available_balance = (self.balance - self.locked) / 100000000
         rounded_available_balance = round(available_balance, 4)
         return rounded_available_balance
-    
+
     def get_int_available_balance(self):
         available_balance = int((self.balance - self.locked) / 100000000)
         return available_balance

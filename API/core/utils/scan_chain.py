@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 
 from django.utils import timezone
 from django.conf import settings
-from django.db.models import F
 
 from ..models.scan_tracker import ScanTracker
 from ..models.transactions import Transaction

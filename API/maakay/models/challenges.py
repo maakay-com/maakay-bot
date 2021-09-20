@@ -11,7 +11,7 @@ class Challenge(models.Model):
     ONGOING = 'ONGOING'
     CANCELLED = 'CANCELLED'
     COMPLETED = 'COMPLETED'
-    
+
     PENDING = "PENDING"
     ACCEPTED = "ACCEPTED"
     REJECTED = "REJECTED"
@@ -41,6 +41,8 @@ class Challenge(models.Model):
 
     contender_status = models.CharField(max_length=255, choices=acceptance_status, default="PENDING")
     referee_status = models.CharField(max_length=255, choices=acceptance_status, default="PENDING")
+
+    winner = models.ForeignKey(User, on_delete=models.DO_NOTHING, blank=True, null=True, related_name='challenge_winner')
 
     status = models.CharField(max_length=255, choices=status_choices, default="NEW")
 
