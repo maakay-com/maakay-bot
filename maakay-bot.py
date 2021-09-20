@@ -30,6 +30,7 @@ from core.utils.send_tnbc import estimate_fee, withdraw_tnbc
 from maakay.models.users import UserTip, MaakayUser
 from maakay.models.challenges import Challenge
 from maakay.models.tournaments import Tournament
+from maakay.shortcuts import convert_to_decimal
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
@@ -144,12 +145,12 @@ async def user_withdraw(ctx, amount: int):
                                                             transaction_status=Transaction.IDENTIFIED,
                                                             direction=Transaction.OUTGOING,
                                                             account_number=obj.withdrawal_address,
-                                                            amount=amount * 100000000,
-                                                            fee=fee * 100000000,
+                                                            amount=amount * settings.TNBC_MULTIPLICATION_FACTOR,
+                                                            fee=fee * settings.TNBC_MULTIPLICATION_FACTOR,
                                                             signature=block_response.json()['signature'],
                                                             block=block_response.json()['id'],
                                                             memo=obj.memo)
-                            converted_amount_plus_fee =  (amount + fee) * 100000000
+                            converted_amount_plus_fee =  (amount + fee) * settings.TNBC_MULTIPLICATION_FACTOR
                             obj.balance -= converted_amount_plus_fee
                             obj.save()
                             UserTransactionHistory.objects.create(user=obj, amount=converted_amount_plus_fee, type=UserTransactionHistory.WITHDRAW, transaction=txs)
@@ -251,12 +252,12 @@ async def tip_new(ctx, amount: float, user: discord.Member):
 
     if sender != recepient:
 
-        total_amount = int(amount * 100000000)
+        total_amount = int(amount * settings.TNBC_MULTIPLICATION_FACTOR)
         total_amount_including_fees = total_amount + settings.TIP_FEE
 
         if sender.get_available_balance() < total_amount_including_fees:
             available_balace_including_fee = sender.get_available_balance() - settings.TIP_FEE
-            decimal_available_balace_including_fee = available_balace_including_fee / 100000000
+            decimal_available_balace_including_fee = convert_to_decimal(available_balace_including_fee)
             embed = discord.Embed(title="Inadequate Funds!!",
                                   description=f"You only have {decimal_available_balace_including_fee} tippable TNBC available. \n Use `/user deposit` to deposit TNBC!!")
             await ctx.send(embed=embed, hidden=True)
@@ -349,7 +350,7 @@ async def challenge_new(ctx, title: str, amount: float, contender: discord.Membe
 
     if not (challenger_user == contender_user or contender_user == referee_user or referee_user == challenger_user):
 
-        total_amount = int(amount * 100000000)
+        total_amount = int(amount * settings.TNBC_MULTIPLICATION_FACTOR)
 
         if total_amount >= settings.MINIMUL_CHALLENGE_AMOUNT:
             if challenger_user.get_available_balance() >= total_amount:
@@ -459,6 +460,37 @@ async def challenge_history(ctx, user:discord.Member):
     
     await ctx.send(embed=embed, hidden=True)
 
+
+@slash.subcommand(base="challenge", name="all", description="list all the active challenges!!")
+async def challenge_all(ctx):
+
+    await ctx.defer(hidden=True)
+    
+    discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+    
+    embed = discord.Embed()
+
+    if Challenge.objects.filter(Q(challenger=discord_user) | Q(contender=discord_user) | Q(referee=discord_user), Q(status=Challenge.ONGOING)).exists():
+
+        challenges = (await sync_to_async(Challenge.objects.filter)(Q(challenger=discord_user) | Q(contender=discord_user) | Q(referee=discord_user), Q(status=Challenge.ONGOING))).order_by('-created_at')[:5]
+
+        for challenge in challenges:
+
+            if challenge.challenger == discord_user:
+                role = "Challenger"
+            elif challenge.contender == discord_user:
+                role = "Contender"
+            else:
+                role = "Referee"
+            embed.add_field(name="Challenge ID", value=challenge.uuid_hex)
+            embed.add_field(name="Amount", value=convert_to_decimal(challenge.amount))
+            embed.add_field(name="Your Role", value=role)
+    else:
+        embed.add_field(name="404!", value="You have no ongoing challenges available.")
+
+    await ctx.send(embed=embed, hidden=True)
+
+
 @slash.subcommand(base="tournament", description="Create a new tournament!!",
                   options=[
                       create_option(
@@ -491,13 +523,13 @@ async def tournament_new(ctx, title: str, description: str, amount: float, url: 
 
     await ctx.defer(hidden=True)
 
-    total_amount = int(amount * 100000000)
+    total_amount = int(amount * settings.TNBC_MULTIPLICATION_FACTOR)
 
     discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
     if total_amount < settings.MINIMUM_TOURNAMENT_AMOUNT:
         embed = discord.Embed(title="Sorry",
-                              description=f"You cannot create tournaments of less than {settings.MINIMUM_TOURNAMENT_AMOUNT / 100000000} TNBC.")
+                              description=f"You cannot create tournaments of less than {convert_to_decimal(settings.MINIMUM_TOURNAMENT_AMOUNT)} TNBC.")
         await ctx.send(embed=embed, hidden=True)
     else:
         if discord_user.get_available_balance() < total_amount:
@@ -523,10 +555,10 @@ async def tournament_new(ctx, title: str, description: str, amount: float, url: 
             await ctx.send("Tournament created successfully.", hidden=True)
 
 
-@slash.subcommand(base="reward", name="torunament", description="Reward the challenge winner!!",
+@slash.subcommand(base="reward", name="tournament", description="Reward the challenge winner!!",
                   options=[
                       create_option(
-                          name="torunament_id",
+                          name="tournament_id",
                           description="ID of challenge.",
                           option_type=3,
                           required=True
@@ -539,7 +571,7 @@ async def tournament_new(ctx, title: str, description: str, amount: float, url: 
                       )
                   ]
                   )
-async def tournament_reward(ctx, torunament_id: str, user: discord.Member):
+async def tournament_reward(ctx, tournament_id: str, user: discord.Member):
 
     discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     winner, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
@@ -547,16 +579,36 @@ async def tournament_reward(ctx, torunament_id: str, user: discord.Member):
     embed = discord.Embed()
 
     # Check if the discord user is referee of the reward
-    if Tournament.objects.filter(uuid_hex=torunament_id, hosted_by=discord_user).exists():
-        if Tournament.objects.filter(uuid_hex=torunament_id, status=Tournament.ONGOING).exists():
-            tournament = await sync_to_async(Tournament.objects.get)(uuid_hex=torunament_id)
+    if Tournament.objects.filter(uuid_hex=tournament_id, hosted_by=discord_user).exists():
+        if Tournament.objects.filter(uuid_hex=tournament_id, status=Tournament.ONGOING).exists():
+            tournament = await sync_to_async(Tournament.objects.get)(uuid_hex=tournament_id)
             tournament.status = Tournament.COMPLETED
             tournament.winner = winner
             tournament.save()
+
+            discord_user.balance -= tournament.amount
+            discord_user.locked -= tournament.amount
+            discord_user.save()
+
             winner.balance += tournament.amount - settings.TOURNAMENT_FEE
+            winner.save()
+
             MaakayUser.objects.filter(user=winner).update(total_won_in_tournaments=F('total_won_in_tournaments') + tournament.amount - settings.TOURNAMENT_FEE,
                                                           total_tournaments_won=F('total_tournaments_won') + 1)
-            winner.save()
+
+            winner = await client.fetch_user(user.id)
+            hosted_by = await client.fetch_user(ctx.author.id)
+            tournament_channel = client.get_channel(int(settings.TOURNAMENT_CHANNEL_ID))
+            tournament_embed = discord.Embed(title="Tournament Ended", description="")
+            tournament_embed.add_field(name="Title", value=tournament.title)
+            tournament_embed.add_field(name="Description", value=tournament.description)
+            tournament_embed.add_field(name="Reward (TNBC)", value=convert_to_decimal(tournament.amount - settings.TOURNAMENT_FEE))
+            tournament_embed.add_field(name="More info", value=tournament.url)
+            tournament_embed.add_field(name="Winner", value=winner.mention)
+            tournament_embed.add_field(name="Hosted By", value=hosted_by.mention)
+            tournament_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+            await tournament_channel.send(embed=tournament_embed)
+
             embed.add_field(name="Success!", value="The tournament is rewarded successfully.")
             await ctx.send(embed=embed, hidden=True)
         else:
