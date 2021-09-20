@@ -1,4 +1,6 @@
+from datetime import datetime
 import os
+from discord.colour import Color
 import humanize
 import sys
 import django
@@ -563,6 +565,33 @@ async def tournament_reward(ctx, torunament_id: str, user: discord.Member):
     else:
         embed.add_field(name="Sorry!", value="You donot have correct permission to reward this challenge.")
         await ctx.send(embed=embed, hidden=True)
+
+@slash.slash(name="help", description="List of Commands!!")
+async def help_(ctx):
+
+    await ctx.defer(hidden=True)
+
+    embed = discord.Embed(title="Commands", color= Color.orange())
+    embed.set_footer(text="Fields with * are required!!\n \u200b")
+    embed.timestamp = datetime.utcnow()
+    embed.set_thumbnail(url=client.user.avatar_url)
+
+    embed.add_field(name="/balance", value="Check your balance.", inline=False)
+    embed.add_field(name="/deposit", value="Deposit TNBC into your maakay account.", inline=False)
+    embed.add_field(name="/set_withdrawl_address tnbc `<your withdrawl address>*`", value="Set a new withdrawl address.", inline=False)
+    embed.add_field(name="/withdraw tnbc `<amount>*`", value="Withdraw TNBC into your account.", inline=False)
+    embed.add_field(name="/transactions tnbc", value="Check Transaction History!!", inline=False)
+    embed.add_field(name="/profile `<user you want to check profile of>*`", value="Check profile of an user.", inline=False)
+    embed.add_field(name="/tip tnbc `<amount>` `<user you want to tip>*`", value="Tip another user!!", inline=False)
+    embed.add_field(name="/tip history", value="View tip history!!", inline=False)
+    embed.add_field(name="/challenge new `<title of the challenge>*` `<amount>*` `<contender>*` `<referee>*`", value="Create a new challenge!!", inline=False)
+    embed.add_field(name="/reward challenge `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!", inline=False)
+    embed.add_field(name="/challenge history `<user>*`", value="Show the history of challenges in which the user participated!!", inline=False)
+    embed.add_field(name="/challenge all", value="List all the active challenges!!", inline=False)
+    embed.add_field(name="/tournament `<title>*` `<description>*` `<amount>*` `<url for more info>*`", value="Create a new tournament!!", inline=False)
+    embed.add_field(name="/reward tournament `<tournament id>*` `<challenge winner>*`", value="Reward the tournament winner!!", inline=False)
+    embed.add_field(name="/kill", value="Kill the bot!!", inline=False)
+    await ctx.send(embed=embed)
 
 
 @client.event
