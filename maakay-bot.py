@@ -447,7 +447,8 @@ async def challenge_history(ctx, user:discord.Member):
     if Challenge.objects.filter(Q(challenger=obj) | Q(contender=obj)).exists():
 
         challenges = await sync_to_async(Challenge.objects.filter(Q(challenger=obj) | Q(contender=obj))).order_by('-created_at')[:5]
-        embed = discord.Embed(title=f"{str(user)[0:5]}'s Challenge History")
+        embed = discord.Embed(title="Challenge History")
+        embed.set_author(name=user.name, icon_url=user.avatar_url)
         
         for challenge in challenges:
             if challenge.challenger == obj:
@@ -623,22 +624,16 @@ async def tournament_reward(ctx, tournament_id: str, user: discord.Member):
 async def tournament_all(ctx):
     
     await ctx.defer(hidden=True)
-    print(ctx.author)
     discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
-    embed = discord.Embed(title=f"{str(ctx.author)[0:-5]}'s Active Tournaments")
+    embed = discord.Embed(title="Active Tournaments")
+    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
 
-    if Tournament.objects.filter(Q(hosted_by=discord_user) | Q(winner=discord_user), Q(status=Tournament.ONGOING)).exists():
+    if Tournament.objects.filter(Q(hosted_by=discord_user), Q(status=Tournament.ONGOING)).exists():
 
-        tournaments = (await sync_to_async(Tournament.objects.filter)(Q(hosted_by=discord_user) | Q(winner=discord_user), Q(satus=Tournament.ONGOING))).order_by('-created_at')[:5]
-
+        tournaments = (await sync_to_async(Tournament.objects.filter)(Q(hosted_by=discord_user), Q(satus=Tournament.ONGOING))).order_by('-created_at')[:5]
         for tournament in tournaments:
-            if tournament.hosted_by == discord_user:
-                role = "Host"
-            else:
-                role = "Winner"
-            
-            embed.add_field(name=f"**{tournament.title}**\n*Tournament uuid: {tournament.uuid_hex}*\n*{tournament.description}*", value=f">Role: {role}\n >Amoung: {tournament.amount}")
+            embed.add_field(name=f"**{tournament.title}**\n*Tournament uuid: {tournament.uuid_hex}*\n*{tournament.description}*", value=f">Role: Host\n >Amount: {tournament.amount}")
     else:
         embed.add_field(name="404!", value="You have no ongoing tournaments available.")
     
