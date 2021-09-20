@@ -446,7 +446,7 @@ async def challenge_history(ctx, user:discord.Member):
     if Challenge.objects.filter(Q(challenger=obj) | Q(contender=obj)).exists():
 
         challenges = await sync_to_async(Challenge.objects.filter(Q(challenger=obj) | Q(contender=obj))).order_by('-created_at')[:5]
-        embed = discord.Embed(title=f"{obj.name}'s Challenge History")
+        embed = discord.Embed(title=f"{str(user)[0:5]}'s Challenge History")
         
         for challenge in challenges:
             if challenge.challenger == obj:
@@ -459,7 +459,7 @@ async def challenge_history(ctx, user:discord.Member):
     
     await ctx.send(embed=embed, hidden=True)
 
-@slash.slash(name="tournament", description="Create a new tournament!!",
+@slash.subcommand(base="tournament", description="Create a new tournament!!",
                   options=[
                       create_option(
                           name="title",
@@ -565,6 +565,33 @@ async def tournament_reward(ctx, torunament_id: str, user: discord.Member):
     else:
         embed.add_field(name="Sorry!", value="You donot have correct permission to reward this challenge.")
         await ctx.send(embed=embed, hidden=True)
+
+
+@slash.subcommand(base="tournament", name="all", description="list all the active challenges!!")
+async def tournament_all(ctx):
+    
+    await ctx.defer(hidden=True)
+    print(ctx.author)
+    discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+
+    embed = discord.Embed(title=f"{str(ctx.author)[0:-5]}'s Active Tournaments")
+
+    if Tournament.objects.filter(Q(hosted_by=discord_user) | Q(winner=discord_user), Q(status=Tournament.ONGOING)).exists():
+
+        tournaments = (await sync_to_async(Tournament.objects.filter)(Q(hosted_by=discord_user) | Q(winner=discord_user), Q(satus=Tournament.ONGOING))).order_by('-created_at')[:5]
+
+        for tournament in tournaments:
+            if tournament.hosted_by == discord_user:
+                role = "Host"
+            else:
+                role = "Winner"
+            
+            embed.add_field(name=f"**{tournament.title}**\n*Tournament uuid: {tournament.uuid_hex}*\n*{tournament.description}*", value=f">Role: {role}\n >Amoung: {tournament.amount}")
+    else:
+        embed.add_field(name="404!", value="You have no ongoing tournaments available.")
+    
+    await ctx.send(embed=embed, hidden=True)
+
 
 @slash.slash(name="help", description="List of Commands!!")
 async def help_(ctx):
