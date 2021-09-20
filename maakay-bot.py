@@ -638,6 +638,31 @@ async def tournament_all(ctx):
 
     await ctx.send(embed=embed, hidden=True)
 
+@slash.subcommand(base="tournament", name="history", description="list all the challenges user has participated in!!")
+async def tournament_history(ctx):
+
+    await ctx.defer(hidden=True)
+    
+    discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+
+    embed = discord.Embed()
+
+    if Tournament.objects.filter(Q(hosted_by=discord_user) | Q(winner=discord_user), Q(status=Tournament.COMPLETED)).exists():
+
+        tournaments = (await sync_to_async(Tournament.objects.filter)(Q(hosted_by=discord_user) | Q(winner=discord_user), Q(status=Tournament.COMPLETED))).order_by('-created_at')[:5]
+        for tournament in tournaments:
+
+            if tournament.hosted_by == discord_user:
+                role = "Host"
+            else:
+                role = "Winner"
+            
+            embed.add_field(name=f"**{tournament.title}**\n *{tournament.description}*", value=f">Role: {role}\n >Amount: {tournament.amount}", inline=False)
+
+    else:
+        embed.add_field(name='Error!', value="404 Not Found.")
+    
+    ctx.send(embed=embed, hidden=True)
 
 @slash.slash(name="help", description="List of Commands!!")
 async def help_(ctx):
@@ -658,11 +683,13 @@ async def help_(ctx):
     embed.add_field(name="/tip tnbc `<amount>` `<user you want to tip>*`", value="Tip another user!!", inline=False)
     embed.add_field(name="/tip history", value="View tip history!!", inline=False)
     embed.add_field(name="/challenge new `<title of the challenge>*` `<amount>*` `<contender>*` `<referee>*`", value="Create a new challenge!!", inline=False)
-    embed.add_field(name="/reward challenge `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!", inline=False)
-    embed.add_field(name="/challenge history `<user>*`", value="Show the history of challenges in which the user participated!!", inline=False)
+    embed.add_field(name="/challenge reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!", inline=False)
+    embed.add_field(name="/challenge history", value="Show the history of challenges in which the user participated!!", inline=False)
     embed.add_field(name="/challenge all", value="List all the active challenges!!", inline=False)
     embed.add_field(name="/tournament `<title>*` `<description>*` `<amount>*` `<url for more info>*`", value="Create a new tournament!!", inline=False)
-    embed.add_field(name="/reward tournament `<tournament id>*` `<challenge winner>*`", value="Reward the tournament winner!!", inline=False)
+    embed.add_field(name="/tournament `<tournament id>*` `<challenge winner>*`", value="Reward the tournament winner!!", inline=False)
+    embed.add_field(name="/tournament history", value="List of Tournaments you participated in!!", inline=False)
+    
     await ctx.send(embed=embed)
 
 
