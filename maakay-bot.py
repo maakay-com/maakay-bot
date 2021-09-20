@@ -552,10 +552,10 @@ async def tournament_new(ctx, title: str, description: str, amount: float, url: 
             await ctx.send("Tournament created successfully.", hidden=True)
 
 
-@slash.subcommand(base="reward", name="torunament", description="Reward the challenge winner!!",
+@slash.subcommand(base="reward", name="tournament", description="Reward the challenge winner!!",
                   options=[
                       create_option(
-                          name="torunament_id",
+                          name="tournament_id",
                           description="ID of challenge.",
                           option_type=3,
                           required=True
@@ -568,7 +568,7 @@ async def tournament_new(ctx, title: str, description: str, amount: float, url: 
                       )
                   ]
                   )
-async def tournament_reward(ctx, torunament_id: str, user: discord.Member):
+async def tournament_reward(ctx, tournament_id: str, user: discord.Member):
 
     discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     winner, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
@@ -576,16 +576,36 @@ async def tournament_reward(ctx, torunament_id: str, user: discord.Member):
     embed = discord.Embed()
 
     # Check if the discord user is referee of the reward
-    if Tournament.objects.filter(uuid_hex=torunament_id, hosted_by=discord_user).exists():
-        if Tournament.objects.filter(uuid_hex=torunament_id, status=Tournament.ONGOING).exists():
-            tournament = await sync_to_async(Tournament.objects.get)(uuid_hex=torunament_id)
+    if Tournament.objects.filter(uuid_hex=tournament_id, hosted_by=discord_user).exists():
+        if Tournament.objects.filter(uuid_hex=tournament_id, status=Tournament.ONGOING).exists():
+            tournament = await sync_to_async(Tournament.objects.get)(uuid_hex=tournament_id)
             tournament.status = Tournament.COMPLETED
             tournament.winner = winner
             tournament.save()
+
+            discord_user.balance -= tournament.amount
+            discord_user.locked -= tournament.amount
+            discord_user.save()
+
             winner.balance += tournament.amount - settings.TOURNAMENT_FEE
+            winner.save()
+
             MaakayUser.objects.filter(user=winner).update(total_won_in_tournaments=F('total_won_in_tournaments') + tournament.amount - settings.TOURNAMENT_FEE,
                                                           total_tournaments_won=F('total_tournaments_won') + 1)
-            winner.save()
+
+            winner = await client.fetch_user(user.id)
+            hosted_by = await client.fetch_user(ctx.author.id)
+            tournament_channel = client.get_channel(int(settings.TOURNAMENT_CHANNEL_ID))
+            tournament_embed = discord.Embed(title="Tournament Ended", description="")
+            tournament_embed.add_field(name="Title", value=tournament.title)
+            tournament_embed.add_field(name="Description", value=tournament.description)
+            tournament_embed.add_field(name="Reward (TNBC)", value=convert_to_decimal(tournament.amount - settings.TOURNAMENT_FEE))
+            tournament_embed.add_field(name="More info", value=tournament.url)
+            tournament_embed.add_field(name="Winner", value=winner.mention)
+            tournament_embed.add_field(name="Hosted By", value=hosted_by.mention)
+            tournament_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+            await tournament_channel.send(embed=tournament_embed)
+
             embed.add_field(name="Success!", value="The tournament is rewarded successfully.")
             await ctx.send(embed=embed, hidden=True)
         else:
