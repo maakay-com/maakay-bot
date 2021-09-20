@@ -446,12 +446,12 @@ async def challenge_history(ctx, user:discord.Member):
         challenges = await sync_to_async(Challenge.objects.filter(Q(challenger=obj) | Q(contender=obj))).order_by('-created_at')[:5]
         embed = discord.Embed(title=f"{obj.name}'s Challenge History")
         
-        for challenge in range(0, len(challenges)):
-            if challenges[challenge].challenger == obj:
+        for challenge in challenges:
+            if challenge.challenger == obj:
                 role = "Challenger"
-            elif challenges[challenge].contender == obj:
+            elif challenge.contender == obj:
                 role = "Contender"
-            embed.add_field(name=f"**{challenges[challenge].title}**", value=f'> Role: {role}\n> Amount: {str(challenges[challenge].amount)}', inline=False)
+            embed.add_field(name=f"**{challenge.title}**", value=f'> Role: {role}\n> Amount: {str(challenge.amount)}', inline=False)
     else:
         embed = discord.Embed(title="Error!!", description="404 Not Found.")
     
