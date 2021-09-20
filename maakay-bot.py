@@ -426,6 +426,36 @@ async def challenge_reward(ctx, challenge_id: str, user: discord.Member):
         embed.add_field(name="Error!", value="You're not a referee of this challenge.")
         await ctx.send(embed=embed, hidden=True)
 
+@slash.subcommand(base="challenge", name="history", description="Show the history of challenges in which the user was included.",
+                 options=[
+                    create_option(
+                        name="user",
+                        description="User whose challenge history is being talked about",
+                        option_type=6,
+                        required=True
+                    )
+                ]
+                )
+
+async def challenge_history(ctx, user:discord.Member):
+
+    obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
+
+    if Challenge.objects.filter(Q(challenger=obj) | Q(contender=obj)).exists():
+
+        challenges = await sync_to_async(Challenge.objects.filter(Q(challenger=obj) | Q(contender=obj))).order_by('-created_at')[:5]
+        embed = discord.Embed(title=f"{obj.name}'s Challenge History")
+        
+        for challenge in range(0, len(challenges)):
+            if challenges[challenge].challenger == obj:
+                role = "Challenger"
+            elif challenges[challenge].contender == obj:
+                role = "Contender"
+            embed.add_field(name=f"**{challenges[challenge].title}**", value=f'> Role: {role}\n> Amount: {str(challenges[challenge].amount)}', inline=False)
+    else:
+        embed = discord.Embed(title="Error!!", description="404 Not Found.")
+    
+    await ctx.send(embed=embed, hidden=True)
 
 @slash.slash(name="tournament", description="Create a new tournament!!",
                   options=[
