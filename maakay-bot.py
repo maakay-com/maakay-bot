@@ -247,10 +247,16 @@ async def user_profile(ctx, user: discord.Member = None):
                           description="Enter your escrow partner.",
                           option_type=6,
                           required=True
+                      ),
+                      create_option(
+                          name="title",
+                          description="Title of the tip",
+                          option_type=3,
+                          required=True
                       )
                   ]
                   )
-async def tip_new(ctx, amount: float, user: discord.Member):
+async def tip_new(ctx, amount: float, user: discord.Member, title: str):
 
     sender, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     recepient, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
@@ -272,7 +278,7 @@ async def tip_new(ctx, amount: float, user: discord.Member):
             recepient.balance += total_amount
             sender.save()
             recepient.save()
-            UserTip.objects.create(sender=sender, recepient=recepient, amount=total_amount)
+            UserTip.objects.create(sender=sender, recepient=recepient, amount=total_amount, title=title)
 
             sender_profile = MaakayUser.objects.get_or_create(user=sender)
             recepient_profile = MaakayUser.objects.get_or_create(user=recepient)
@@ -307,10 +313,8 @@ async def tip_history(ctx):
             sender = await client.fetch_user(int(tip.sender.discord_id))
             recepient = await client.fetch_user(int(tip.recepient.discord_id))
 
-            embed.add_field(name=str(tip.created_at), value=f"Sender: {sender.mention}\n Recepient: {recepient.mention} Amount: {tip.get_decimal_amount()}")
-            embed.add_field(name="Sender", value=sender.mention)
-            embed.add_field(name="Recepient", value=recepient.mention)
-            embed.add_field(name="Amount", value=tip.amount)
+            embed.add_field(name=f"**{tip.title}**", value=f"> Sender: {sender.mention}\n> Recepient: {recepient.mention}\n> Amount: {tip.get_decimal_amount()}")
+
     else:
         embed = discord.Embed(title="Error!!", description="404 Not Found.", color=Color.orange())
 
@@ -686,7 +690,7 @@ async def help_(ctx):
     embed.add_field(name="/withdraw tnbc `<amount>*`", value="Withdraw TNBC into your account.", inline=False)
     embed.add_field(name="/transactions tnbc", value="Check Transaction History!!", inline=False)
     embed.add_field(name="/profile `<user you want to check profile of>*`", value="Check profile of an user.", inline=False)
-    embed.add_field(name="/tip tnbc `<amount>` `<user you want to tip>*`", value="Tip another user!!", inline=False)
+    embed.add_field(name="/tip tnbc `<amount>*` `<user you want to tip>*` `<title for the tip>*`", value="Tip another user!!", inline=False)
     embed.add_field(name="/tip history", value="View tip history!!", inline=False)
     embed.add_field(name="/challenge new `<title of the challenge>*` `<amount>*` `<contender>*` `<referee>*`", value="Create a new challenge!!", inline=False)
     embed.add_field(name="/challenge reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!", inline=False)

@@ -52,6 +52,8 @@ class UserTip(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    title = models.CharField(max_length=255, default="")
+
     def get_decimal_amount(self):
         amount = self.amount / 100000000
         rounded_amount = round(amount, 4)
