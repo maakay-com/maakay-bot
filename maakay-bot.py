@@ -194,7 +194,6 @@ async def user_transactions(ctx):
     await ctx.send(embed=embed, hidden=True)
 
 
-
 @slash.slash(name="profile", description="Check the user profile!!",
              options=[
                  create_option(
