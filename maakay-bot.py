@@ -642,7 +642,7 @@ async def tournament_all(ctx):
 async def tournament_history(ctx):
 
     await ctx.defer(hidden=True)
-    
+
     discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
     embed = discord.Embed()
@@ -657,12 +657,13 @@ async def tournament_history(ctx):
             else:
                 role = "Winner"
             
-            embed.add_field(name=f"**{tournament.title}**\n *{tournament.description}*", value=f">Role: {role}\n >Amount: {tournament.amount}", inline=False)
+            embed.add_field(name=f"**{tournament.title}**\n *{tournament.description}*", value=f"> Role: {role}\n > Amount: {convert_to_decimal(tournament.amount)} TNBC", inline=False)
 
     else:
         embed.add_field(name='Error!', value="404 Not Found.")
     
-    ctx.send(embed=embed, hidden=True)
+    await ctx.send(embed=embed, hidden=True)
+
 
 @slash.slash(name="help", description="List of Commands!!")
 async def help_(ctx):
