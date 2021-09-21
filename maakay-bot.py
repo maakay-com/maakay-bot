@@ -304,7 +304,7 @@ async def tip_history(ctx):
     if UserTip.objects.filter(Q(sender=obj) | Q(recepient=obj)).exists():
 
         tips = (await sync_to_async(UserTip.objects.filter)(Q(sender=obj) | Q(recepient=obj))).order_by('-created_at')[:5]
-
+        
         embed = discord.Embed(color=Color.orange())
 
         for tip in tips:
@@ -312,7 +312,7 @@ async def tip_history(ctx):
             sender = await client.fetch_user(int(tip.sender.discord_id))
             recepient = await client.fetch_user(int(tip.recepient.discord_id))
 
-            embed.add_field(name="", value=f"> {tip.title}\n > Sender: {sender.mention}\n> Recepient: {recepient.mention}\n> Amount: {tip.get_decimal_amount()}", inline=False)
+            embed.add_field(name="", value=f"> {tip.title}\n > Sender: {sender.mention}\n> Recepient: {recepient.mention}\n> Amount: {tip.get_decimal_amount()} Coins", inline=False)
 
     else:
         embed = discord.Embed(title="Error!!", description="404 Not Found.", color=Color.orange())
