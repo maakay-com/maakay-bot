@@ -667,8 +667,6 @@ async def tournament_history(ctx):
 @slash.slash(name="help", description="List of Commands!!")
 async def help_(ctx):
 
-    # await ctx.defer(hidden=True)
-
     embed = discord.Embed(title="Commands", color=Color.orange())
     embed.set_footer(text="Fields with * are required!!\n \u200b")
     embed.timestamp = datetime.utcnow()
