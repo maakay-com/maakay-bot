@@ -212,7 +212,6 @@ async def user_profile(ctx, user: discord.Member = None):
 
     if user:
         obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
-        obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
         embed = discord.Embed(title=f"{user.name}'s Maakay Profile", description="", color=Color.orange())
         embed.set_thumbnail(url=user.avatar_url)
     else:
@@ -637,7 +636,6 @@ async def tournament_all(ctx):
 
         tournaments = (await sync_to_async(Tournament.objects.filter)(Q(hosted_by=discord_user), Q(status=Tournament.ONGOING))).order_by('-created_at')[:5]
         for tournament in tournaments:
-            embed.add_field(name=f"**{tournament.title}**\n *{tournament.description}*", value=f"> Role: Host\n > Amount: {convert_to_decimal(tournament.amount)}", inline=False)
             embed.add_field(name=f"**{tournament.title}**\n *{tournament.description}*", value=f"> Role: Host\n> Amount: {convert_to_decimal(tournament.amount)}", inline=False)
     else:
         embed.add_field(name="404!", value="You have no ongoing tournaments available.")
