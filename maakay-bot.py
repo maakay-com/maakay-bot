@@ -662,7 +662,7 @@ async def tournament_history(ctx):
     else:
         embed.add_field(name='Error!', value="404 Not Found.")
     
-    ctx.send(embed=embed, hidden=True)
+    await ctx.send(embed=embed, hidden=True)
 
 @slash.slash(name="help", description="List of Commands!!")
 async def help_(ctx):
