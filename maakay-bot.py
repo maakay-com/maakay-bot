@@ -312,7 +312,7 @@ async def tip_history(ctx):
             sender = await client.fetch_user(int(tip.sender.discord_id))
             recepient = await client.fetch_user(int(tip.recepient.discord_id))
 
-            embed.add_field(name="", value=f"> {tip.title}\n> Sender: {sender.mention}\n> Recepient: {recepient.mention}\n> Amount: {tip.get_decimal_amount()}", inline=False)
+            embed.add_field(name="", value=f"> {tip.title}\n > Sender: {sender.mention}\n> Recepient: {recepient.mention}\n> Amount: {tip.get_decimal_amount()}", inline=False)
 
     else:
         embed = discord.Embed(title="Error!!", description="404 Not Found.", color=Color.orange())
@@ -490,9 +490,6 @@ async def challenge_all(ctx):
             else:
                 role = "Referee"
             embed.add_field(name=f"{challenge.title}", value=f"> Challenge ID: {challenge.uuid_hex}\n> Amount: {convert_to_decimal(challenge.amount)}\n> Role: {role}")
-            embed.add_field(name="Amount", value=convert_to_decimal(challenge.amount))
-            embed.add_field(name="Your Role", value=role)
-            embed.add_field(name=f"{challenge.title}", value=f"> ID: {challenge.uuid_hex}\n> Amount: {convert_to_decimal(challenge.amount)} TNBC\n> Role: {role}")
     else:
         embed.add_field(name="404!", value="You have no ongoing challenges available.")
 
