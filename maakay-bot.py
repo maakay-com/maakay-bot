@@ -312,7 +312,7 @@ async def tip_history(ctx):
             sender = await client.fetch_user(int(tip.sender.discord_id))
             recepient = await client.fetch_user(int(tip.recepient.discord_id))
 
-            embed.add_field(name=f"**{tip.title}**", value=f"> Sender: {sender.mention}\n> Recepient: {recepient.mention}\n> Amount: {tip.get_decimal_amount()}")
+            embed.add_field(name=f"**{tip.title}**", value=f"> Sender: {sender.mention}\n> Recepient: {recepient.mention}\n> Amount: {tip.get_decimal_amount()}", inline=False)
 
     else:
         embed = discord.Embed(title="Error!!", description="404 Not Found.", color=Color.orange())
