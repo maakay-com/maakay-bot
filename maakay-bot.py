@@ -56,6 +56,7 @@ async def user_balance(ctx):
     obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
     embed = discord.Embed(color=Color.orange())
+    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
     embed.add_field(name='Withdrawal Address', value=obj.withdrawal_address, inline=False)
     embed.add_field(name='Balance (TNBC)', value=obj.get_decimal_balance())
     embed.add_field(name='Locked Amount (TNBC)', value=obj.get_decimal_locked_amount())
@@ -207,6 +208,8 @@ async def user_profile(ctx, user: discord.Member = None):
 
     await ctx.defer()
 
+    
+
     if user:
         obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
         embed = discord.Embed(title=f"{user.name}'s Maakay Profile", description="", color=Color.orange())
@@ -242,10 +245,16 @@ async def user_profile(ctx, user: discord.Member = None):
                           description="Enter your escrow partner.",
                           option_type=6,
                           required=True
+                      ),
+                      create_option(
+                          name="message",
+                          description="Message for the tip.",
+                          option_type=3,
+                          required=True
                       )
                   ]
                   )
-async def tip_new(ctx, amount: float, user: discord.Member):
+async def tip_new(ctx, amount: float, user: discord.Member, message: str):
 
     sender, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     recepient, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
@@ -267,7 +276,7 @@ async def tip_new(ctx, amount: float, user: discord.Member):
             recepient.balance += total_amount
             sender.save()
             recepient.save()
-            UserTip.objects.create(sender=sender, recepient=recepient, amount=total_amount)
+            UserTip.objects.create(sender=sender, recepient=recepient, amount=total_amount, title=message)
 
             sender_profile = MaakayUser.objects.get_or_create(user=sender)
             recepient_profile = MaakayUser.objects.get_or_create(user=recepient)
@@ -294,7 +303,7 @@ async def tip_history(ctx):
     if UserTip.objects.filter(Q(sender=obj) | Q(recepient=obj)).exists():
 
         tips = (await sync_to_async(UserTip.objects.filter)(Q(sender=obj) | Q(recepient=obj))).order_by('-created_at')[:5]
-
+        
         embed = discord.Embed(color=Color.orange())
 
         for tip in tips:
@@ -302,9 +311,8 @@ async def tip_history(ctx):
             sender = await client.fetch_user(int(tip.sender.discord_id))
             recepient = await client.fetch_user(int(tip.recepient.discord_id))
 
-            embed.add_field(name="Sender", value=sender.mention)
-            embed.add_field(name="Recepient", value=recepient.mention)
-            embed.add_field(name="Amount", value=tip.amount)
+            embed.add_field(name="", value=f"> {tip.title}\n > Sender: {sender.mention}\n> Recepient: {recepient.mention}\n> Amount: {tip.get_decimal_amount()} Coins", inline=False)
+
     else:
         embed = discord.Embed(title="Error!!", description="404 Not Found.", color=Color.orange())
 
@@ -480,7 +488,7 @@ async def challenge_all(ctx):
                 role = "Contender"
             else:
                 role = "Referee"
-            embed.add_field(name=f"{challenge.title}", value=f"> ID: {challenge.uuid_hex}\n> Amount: {convert_to_decimal(challenge.amount)} TNBC\n> Role: {role}")
+            embed.add_field(name=f"{challenge.title}", value=f"> Challenge ID: {challenge.uuid_hex}\n> Amount: {convert_to_decimal(challenge.amount)}\n> Role: {role}")
     else:
         embed.add_field(name="404!", value="You have no ongoing challenges available.")
 
@@ -661,8 +669,7 @@ async def tournament_history(ctx):
         embed.add_field(name='404!', value="You have not participated in any tournament.")
 
     await ctx.send(embed=embed, hidden=True)
-
-
+    
 @slash.slash(name="help", description="List of Commands!!")
 async def help_(ctx):
 
@@ -677,7 +684,7 @@ async def help_(ctx):
     embed.add_field(name="/withdraw tnbc `<amount>*`", value="Withdraw TNBC into your account.", inline=False)
     embed.add_field(name="/transactions tnbc", value="Check Transaction History!!", inline=False)
     embed.add_field(name="/profile `<user you want to check profile of>*`", value="Check profile of an user.", inline=False)
-    embed.add_field(name="/tip tnbc `<amount>` `<user you want to tip>*`", value="Tip another user!!", inline=False)
+    embed.add_field(name="/tip tnbc `<amount>*` `<user you want to tip>*` `<title for the tip>*`", value="Tip another user!!", inline=False)
     embed.add_field(name="/tip history", value="View tip history!!", inline=False)
     embed.add_field(name="/challenge new `<title of the challenge>*` `<amount>*` `<contender>*` `<referee>*`", value="Create a new challenge!!", inline=False)
     embed.add_field(name="/challenge reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!", inline=False)
