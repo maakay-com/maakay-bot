@@ -248,14 +248,14 @@ async def user_profile(ctx, user: discord.Member = None):
                           required=True
                       ),
                       create_option(
-                          name="title",
-                          description="Title of the tip",
+                          name="message",
+                          description="Message for the tip.",
                           option_type=3,
                           required=True
                       )
                   ]
                   )
-async def tip_new(ctx, amount: float, user: discord.Member, title: str):
+async def tip_new(ctx, amount: float, user: discord.Member, message: str):
 
     sender, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     recepient, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
@@ -277,7 +277,7 @@ async def tip_new(ctx, amount: float, user: discord.Member, title: str):
             recepient.balance += total_amount
             sender.save()
             recepient.save()
-            UserTip.objects.create(sender=sender, recepient=recepient, amount=total_amount, title=title)
+            UserTip.objects.create(sender=sender, recepient=recepient, amount=total_amount, title=message)
 
             sender_profile = MaakayUser.objects.get_or_create(user=sender)
             recepient_profile = MaakayUser.objects.get_or_create(user=recepient)
