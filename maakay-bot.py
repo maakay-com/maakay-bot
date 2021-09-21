@@ -55,7 +55,8 @@ async def user_balance(ctx):
 
     obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
-    embed = discord.Embed()
+    embed = discord.Embed(color=Color.orange())
+    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
     embed.add_field(name='Withdrawal Address', value=obj.withdrawal_address, inline=False)
     embed.add_field(name='Balance', value=obj.get_decimal_balance())
     embed.add_field(name='Locked Amount', value=obj.get_decimal_locked_amount())
@@ -71,7 +72,7 @@ async def user_deposit(ctx):
 
     obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
-    embed = discord.Embed(title="Send TNBC to the address with memo!!")
+    embed = discord.Embed(title="Send TNBC to the address with memo!!", color=Color.orange())
     embed.add_field(name='Address', value=settings.MAAKAY_PAYMENT_ACCOUNT_NUMBER, inline=False)
     embed.add_field(name='MEMO (MEMO is required, or you will lose your coins)', value=obj.memo, inline=False)
 
@@ -94,17 +95,17 @@ async def user_setwithdrawaladdress(ctx, address: str):
 
     obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
+    embed = discord.Embed(color=Color.orange())
+
     if len(address) == 64:
         if address not in settings.PROHIBITED_ACCOUNT_NUMBERS:
             obj.withdrawal_address = address
             obj.save()
-            embed = discord.Embed()
+            
             embed.add_field(name='Success!!', value=f"Successfully set `{address}` as your withdrawal address!!")
         else:
-            embed = discord.Embed()
             embed.add_field(name='Error!!', value="You can not set this account number as your withdrawal address!!")
     else:
-        embed = discord.Embed()
         embed.add_field(name='Error!!', value="Please enter a valid TNBC account number!!")
 
     await ctx.send(embed=embed, hidden=True)
@@ -134,7 +135,7 @@ async def user_withdraw(ctx, amount: int):
             if not amount < 1:
                 if obj.get_int_available_balance() < amount + fee:
                     embed = discord.Embed(title="Inadequate Funds!!",
-                                          description=f"You only have {obj.get_int_available_balance() - fee} withdrawable TNBC (network fees included) available. \n Use `/user deposit` to deposit TNBC!!")
+                                          description=f"You only have {obj.get_int_available_balance() - fee} withdrawable TNBC (network fees included) available. \n Use `/deposit tnbc` to deposit TNBC!!")
 
                 else:
                     block_response, fee = withdraw_tnbc(obj.withdrawal_address, amount, obj.memo)
@@ -158,7 +159,7 @@ async def user_withdraw(ctx, amount: int):
                             statistic.total_balance -= converted_amount_plus_fee
                             statistic.save()
                             embed = discord.Embed(title="Coins Withdrawn!",
-                                                  description=f"Successfully withdrawn {amount} TNBC to {obj.withdrawal_address} \n Use `/user balance` to check your new balance.")
+                                                  description=f"Successfully withdrawn {amount} TNBC to {obj.withdrawal_address} \n Use `/balance` to check your new balance.")
                         else:
                             embed = discord.Embed(title="Error!", description="Please try again later!!")
                     else:
@@ -168,7 +169,7 @@ async def user_withdraw(ctx, amount: int):
         else:
             embed = discord.Embed(title="Error!", description="Could not retrive fee info from the bank!!")
     else:
-        embed = discord.Embed(title="No withdrawal address set!!", description="Use `/user set_withdrawal_address` to set withdrawal address!!")
+        embed = discord.Embed(title="No withdrawal address set!!", description="Use `/set_withdrawal_address tnbc` to set withdrawal address!!")
 
     await ctx.send(embed=embed, hidden=True)
 
@@ -182,7 +183,7 @@ async def user_transactions(ctx):
 
     transactions = (await sync_to_async(UserTransactionHistory.objects.filter)(user=obj)).order_by('-created_at')[:8]
 
-    embed = discord.Embed(title="Transaction History", description="")
+    embed = discord.Embed(title="Transaction History", description="", color=Color.orange())
 
     for txs in transactions:
 
@@ -191,6 +192,7 @@ async def user_transactions(ctx):
         embed.add_field(name='\u200b', value=f"{txs.type} - {txs.get_decimal_amount()} TNBC - {natural_day}", inline=False)
 
     await ctx.send(embed=embed, hidden=True)
+
 
 
 @slash.slash(name="profile", description="Check the user profile!!",
@@ -207,13 +209,13 @@ async def user_profile(ctx, user: discord.Member = None):
 
     await ctx.defer()
 
+    embed = discord.Embed(title="Maakay Profile", description="", color=Color.orange())
+
     if user:
         obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
-        embed = discord.Embed(title="Maakay Profile", description="")
         embed.set_author(name=user.name, icon_url=user.avatar_url)
     else:
         obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
-        embed = discord.Embed(title="Maakay Profile", description="")
         embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
 
     user_profile = await sync_to_async(MaakayUser.objects.get_or_create)(user=obj)
@@ -259,7 +261,7 @@ async def tip_new(ctx, amount: float, user: discord.Member):
             available_balace_including_fee = sender.get_available_balance() - settings.TIP_FEE
             decimal_available_balace_including_fee = convert_to_decimal(available_balace_including_fee)
             embed = discord.Embed(title="Inadequate Funds!!",
-                                  description=f"You only have {decimal_available_balace_including_fee} tippable TNBC available. \n Use `/user deposit` to deposit TNBC!!")
+                                  description=f"You only have {decimal_available_balace_including_fee} tippable TNBC available. \n Use `/user deposit` to deposit TNBC!!", color=Color.orange())
             await ctx.send(embed=embed, hidden=True)
 
         else:
@@ -295,19 +297,17 @@ async def tip_history(ctx):
 
         tips = (await sync_to_async(UserTip.objects.filter)(Q(sender=obj) | Q(recepient=obj))).order_by('-created_at')[:5]
 
-        embed = discord.Embed()
+        embed = discord.Embed(color=Color.orange())
 
         for tip in tips:
 
             sender = await client.fetch_user(int(tip.sender.discord_id))
             recepient = await client.fetch_user(int(tip.recepient.discord_id))
 
-            embed.add_field(name="Sender", value=sender.mention)
-            embed.add_field(name="Recepient", value=recepient.mention)
-            embed.add_field(name="Amount", value=tip.get_decimal_amount())
+            embed.add_field(name=str(tip.created_at), value=f"Sender: {sender.mention}\n Recepient: {recepient.mention} Amount: {tip.get_decimal_amount()}")
 
     else:
-        embed = discord.Embed(title="Error!!", description="404 Not Found.")
+        embed = discord.Embed(title="Error!!", description="404 Not Found.", color=Color.orange())
 
     await ctx.send(embed=embed, hidden=True)
 
@@ -346,7 +346,7 @@ async def challenge_new(ctx, title: str, amount: float, contender: discord.Membe
     contender_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(contender.id))
     referee_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(referee.id))
 
-    embed = discord.Embed()
+    embed = discord.Embed(color=Color.orange())
 
     if not (challenger_user == contender_user or contender_user == referee_user or referee_user == challenger_user):
 
@@ -392,7 +392,7 @@ async def challenge_reward(ctx, challenge_id: str, user: discord.Member):
     referee, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     winner, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
 
-    embed = discord.Embed()
+    embed = discord.Embed(color=Color.orange())
 
     # Check if the discord user is referee of the challenge
     if Challenge.objects.filter(uuid_hex=challenge_id, referee=referee).exists():
@@ -442,7 +442,7 @@ async def challenge_history(ctx):
     if Challenge.objects.filter(Q(challenger=obj) | Q(contender=obj), Q(status=Challenge.COMPLETED)).exists():
 
         challenges = (await sync_to_async(Challenge.objects.filter)(Q(challenger=obj) | Q(contender=obj), Q(status=Challenge.COMPLETED))).order_by('-created_at')[:5]
-        embed = discord.Embed(title="Challenge History")
+        embed = discord.Embed(title="Challenge History", color=Color.orange())
 
         for challenge in challenges:
 
@@ -454,7 +454,7 @@ async def challenge_history(ctx):
                 role = "Contender"
             embed.add_field(name=f"**{challenge.title}**", value=f'> Role: {role}\n> Amount: {convert_to_decimal(challenge.amount)}\n> Won By: {winner.mention}', inline=False)
     else:
-        embed = discord.Embed(title="Error!!", description="404 Not Found.")
+        embed = discord.Embed(title="404!", description="You have not participated in any challenge.", color=Color.orange())
 
     await ctx.send(embed=embed, hidden=True)
 
@@ -466,7 +466,8 @@ async def challenge_all(ctx):
 
     discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
-    embed = discord.Embed()
+    embed = discord.Embed(title="Active Challanges", color=Color.orange())
+    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
 
     if Challenge.objects.filter(Q(challenger=discord_user) | Q(contender=discord_user) | Q(referee=discord_user), Q(status=Challenge.ONGOING)).exists():
 
@@ -480,7 +481,7 @@ async def challenge_all(ctx):
                 role = "Contender"
             else:
                 role = "Referee"
-            embed.add_field(name="Challenge ID", value=challenge.uuid_hex)
+            embed.add_field(name=f"{challenge.title}", value=f">Challenge ID: {challenge.uuid_hex}\n>Amount: {convert_to_decimal(challenge.amount)}\n>Role: {role}")
             embed.add_field(name="Amount", value=convert_to_decimal(challenge.amount))
             embed.add_field(name="Your Role", value=role)
     else:
@@ -527,12 +528,12 @@ async def tournament_new(ctx, title: str, description: str, amount: float, url: 
 
     if total_amount < settings.MINIMUM_TOURNAMENT_AMOUNT:
         embed = discord.Embed(title="Sorry",
-                              description=f"You cannot create tournaments of less than {convert_to_decimal(settings.MINIMUM_TOURNAMENT_AMOUNT)} TNBC.")
+                              description=f"You cannot create tournaments of less than {convert_to_decimal(settings.MINIMUM_TOURNAMENT_AMOUNT)} TNBC.", color=Color.orange())
         await ctx.send(embed=embed, hidden=True)
     else:
         if discord_user.get_available_balance() < total_amount:
             embed = discord.Embed(title="Sorry",
-                                  description="You do not have enough maakay balance avalable.\nUse `/deposit tnbc` command to deposit TNBC.")
+                                  description="You do not have enough maakay balance avalable.\nUse `/deposit tnbc` command to deposit TNBC.", color=Color.orange())
             await ctx.send(embed=embed, hidden=True)
         else:
 
@@ -574,7 +575,7 @@ async def tournament_reward(ctx, tournament_id: str, user: discord.Member):
     discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     winner, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
 
-    embed = discord.Embed()
+    embed = discord.Embed(color=Color.orange())
 
     # Check if the discord user is referee of the reward
     if Tournament.objects.filter(uuid_hex=tournament_id, hosted_by=discord_user).exists():
@@ -623,16 +624,14 @@ async def tournament_all(ctx):
     await ctx.defer(hidden=True)
     discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
-    embed = discord.Embed(title="Active Tournaments")
+    embed = discord.Embed(title="Active Tournaments", color=Color.orange())
+    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
 
     if Tournament.objects.filter(Q(hosted_by=discord_user), Q(status=Tournament.ONGOING)).exists():
 
         tournaments = (await sync_to_async(Tournament.objects.filter)(Q(hosted_by=discord_user), Q(status=Tournament.ONGOING))).order_by('-created_at')[:5]
         for tournament in tournaments:
-            embed.add_field(name="ID", value=tournament.uuid_hex, inline=False)
-            embed.add_field(name="Title", value=tournament.title)
-            embed.add_field(name="Description", value=tournament.description)
-            embed.add_field(name="Reward (TNBC)", value=convert_to_decimal(tournament.amount))
+            embed.add_field(name=f"**{tournament.title}**\n *{tournament.description}*", value=f">Role: Host\n >Amount: {tournament.amount}", inline=False)
     else:
         embed.add_field(name="404!", value="You have no ongoing tournaments available.")
 
@@ -645,7 +644,8 @@ async def tournament_history(ctx):
     
     discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
-    embed = discord.Embed()
+    embed = discord.Embed(color=Color.orange())
+    embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
 
     if Tournament.objects.filter(Q(hosted_by=discord_user) | Q(winner=discord_user), Q(status=Tournament.COMPLETED)).exists():
 
@@ -660,14 +660,14 @@ async def tournament_history(ctx):
             embed.add_field(name=f"**{tournament.title}**\n *{tournament.description}*", value=f">Role: {role}\n >Amount: {tournament.amount}", inline=False)
 
     else:
-        embed.add_field(name='Error!', value="404 Not Found.")
+        embed.add_field(name='404!', value="You have not participated in any tournament.")
     
     await ctx.send(embed=embed, hidden=True)
 
 @slash.slash(name="help", description="List of Commands!!")
 async def help_(ctx):
 
-    await ctx.defer(hidden=True)
+    # await ctx.defer(hidden=True)
 
     embed = discord.Embed(title="Commands", color=Color.orange())
     embed.set_footer(text="Fields with * are required!!\n \u200b")
