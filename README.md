@@ -26,3 +26,34 @@ Run the bot using the command `python maakay-bot.py`.
 To run django server, navigate to API directory and use command `python manage.py runserver`.
 
 Discord Bot guide coming soon.
+
+#### Commands
+`/balance`: Check your tnbc balance.
+
+`/deposit tnbc`: Deposit TNBC into your maakay account.
+
+`/set_withdrawl_address tnbc`: Set your TNBC withdrawal address.
+
+`/withdraw tnbc <amount>`: Withdraw TNBC into your withdrawal address.
+
+`/transactions tnbc`: List all your deposit and withdraw history.
+
+`/profile <user (optional)>`: Check your or other user's maakay gaming profile.
+
+`/tip tnbc <user> <amount> <message>`: Tip users TNBC with your beautiful message.
+
+`/tip history`: Check your tip history.
+
+`/challenge new <title> <amount> <contender> <referee>`: Start a new challenge with the contender with referee to reward once challenge is over.
+
+`/challenge all`: List all your active challenges.
+
+`/challenge reward <challenge_id> <winner>`: Reward the winner of the challenge.
+
+`/challenge history`: List your challenge history.
+
+`/tournament new <title> <description> <amount> <url (optional)>`: Start a new tournament with big prizes.
+
+`/tournament reward <tournament_id> <winner>`: Reward the winner of the tournament.
+
+`/tournament history`: View your tournament history.
