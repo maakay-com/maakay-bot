@@ -663,11 +663,7 @@ async def tournament_history(ctx):
         embed.add_field(name='404!', value="You have not participated in any tournament.")
     
     await ctx.send(embed=embed, hidden=True)
-<<<<<<< HEAD
-=======
-
->>>>>>> upstream/main
-
+    
 @slash.slash(name="help", description="List of Commands!!")
 async def help_(ctx):
 
