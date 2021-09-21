@@ -58,9 +58,9 @@ async def user_balance(ctx):
     embed = discord.Embed(color=Color.orange())
     embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
     embed.add_field(name='Withdrawal Address', value=obj.withdrawal_address, inline=False)
-    embed.add_field(name='Balance', value=obj.get_decimal_balance())
-    embed.add_field(name='Locked Amount', value=obj.get_decimal_locked_amount())
-    embed.add_field(name='Available Balance', value=obj.get_decimal_available_balance())
+    embed.add_field(name='Balance (TNBC)', value=obj.get_decimal_balance())
+    embed.add_field(name='Locked Amount (TNBC)', value=obj.get_decimal_locked_amount())
+    embed.add_field(name='Available Balance (TNBC)', value=obj.get_decimal_available_balance())
 
     await ctx.send(embed=embed, hidden=True)
 
@@ -101,7 +101,7 @@ async def user_setwithdrawaladdress(ctx, address: str):
         if address not in settings.PROHIBITED_ACCOUNT_NUMBERS:
             obj.withdrawal_address = address
             obj.save()
-            
+
             embed.add_field(name='Success!!', value=f"Successfully set `{address}` as your withdrawal address!!")
         else:
             embed.add_field(name='Error!!', value="You can not set this account number as your withdrawal address!!")
@@ -212,7 +212,8 @@ async def user_profile(ctx, user: discord.Member = None):
     
 
     if user:
-        obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id)
+        obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
+        obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
         embed = discord.Embed(title=f"{user.name}'s Maakay Profile", description="", color=Color.orange())
         embed.set_thumbnail(url=user.avatar_url)
     else:
@@ -307,7 +308,9 @@ async def tip_history(ctx):
             recepient = await client.fetch_user(int(tip.recepient.discord_id))
 
             embed.add_field(name=str(tip.created_at), value=f"Sender: {sender.mention}\n Recepient: {recepient.mention} Amount: {tip.get_decimal_amount()}")
-
+            embed.add_field(name="Sender", value=sender.mention)
+            embed.add_field(name="Recepient", value=recepient.mention)
+            embed.add_field(name="Amount", value=tip.amount)
     else:
         embed = discord.Embed(title="Error!!", description="404 Not Found.", color=Color.orange())
 
@@ -454,7 +457,7 @@ async def challenge_history(ctx):
                 role = "Challenger"
             elif challenge.contender == obj:
                 role = "Contender"
-            embed.add_field(name=f"**{challenge.title}**", value=f'> Role: {role}\n> Amount: {convert_to_decimal(challenge.amount)}\n> Won By: {winner.mention}', inline=False)
+            embed.add_field(name=f"**{challenge.title}**", value=f'> Role: {role}\n> Amount: {convert_to_decimal(challenge.amount)} TNBC\n> Won By: {winner.mention}', inline=False)
     else:
         embed = discord.Embed(title="404!", description="You have not participated in any challenge.", color=Color.orange())
 
@@ -486,6 +489,7 @@ async def challenge_all(ctx):
             embed.add_field(name=f"{challenge.title}", value=f"> Challenge ID: {challenge.uuid_hex}\n> Amount: {convert_to_decimal(challenge.amount)}\n> Role: {role}")
             embed.add_field(name="Amount", value=convert_to_decimal(challenge.amount))
             embed.add_field(name="Your Role", value=role)
+            embed.add_field(name=f"{challenge.title}", value=f"> ID: {challenge.uuid_hex}\n> Amount: {convert_to_decimal(challenge.amount)} TNBC\n> Role: {role}")
     else:
         embed.add_field(name="404!", value="You have no ongoing challenges available.")
 
@@ -634,10 +638,12 @@ async def tournament_all(ctx):
         tournaments = (await sync_to_async(Tournament.objects.filter)(Q(hosted_by=discord_user), Q(status=Tournament.ONGOING))).order_by('-created_at')[:5]
         for tournament in tournaments:
             embed.add_field(name=f"**{tournament.title}**\n *{tournament.description}*", value=f"> Role: Host\n > Amount: {convert_to_decimal(tournament.amount)}", inline=False)
+            embed.add_field(name=f"**{tournament.title}**\n *{tournament.description}*", value=f"> Role: Host\n> Amount: {convert_to_decimal(tournament.amount)}", inline=False)
     else:
         embed.add_field(name="404!", value="You have no ongoing tournaments available.")
 
     await ctx.send(embed=embed, hidden=True)
+
 
 @slash.subcommand(base="tournament", name="history", description="list all the challenges user has participated in!!")
 async def tournament_history(ctx):
@@ -658,12 +664,12 @@ async def tournament_history(ctx):
                 role = "Host"
             else:
                 role = "Winner"
-            
+
             embed.add_field(name=f"**{tournament.title}**\n *{tournament.description}*", value=f"> Role: {role}\n > Amount: {convert_to_decimal(tournament.amount)} TNBC", inline=False)
 
     else:
         embed.add_field(name='404!', value="You have not participated in any tournament.")
-    
+
     await ctx.send(embed=embed, hidden=True)
     
 @slash.slash(name="help", description="List of Commands!!")
@@ -689,7 +695,7 @@ async def help_(ctx):
     embed.add_field(name="/tournament `<title>*` `<description>*` `<amount>*` `<url for more info>*`", value="Create a new tournament!!", inline=False)
     embed.add_field(name="/tournament `<tournament id>*` `<challenge winner>*`", value="Reward the tournament winner!!", inline=False)
     embed.add_field(name="/tournament history", value="List of Tournaments you participated in!!", inline=False)
-    
+
     await ctx.send(embed=embed)
 
 
