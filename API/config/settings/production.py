@@ -7,7 +7,7 @@ DEBUG = False
 ALLOWED_HOSTS = ['*']
 
 # Business Logic Constants
-BANK_IP = '13.233.77.254'
+BANK_IP = '54.183.16.194'
 MIN_TNBC_ALLOWED = 100  # In TNBC
 
 DATABASES = {

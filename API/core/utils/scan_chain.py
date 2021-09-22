@@ -65,7 +65,7 @@ def scan_chain():
 
             if scan_tracker.last_scanned < transaction_time and not transaction_exists:
 
-                amount = int(transaction['amount']) * 100000000
+                amount = int(transaction['amount']) * settings.TNBC_MULTIPLICATION_FACTOR
 
                 if transaction['recipient'] == settings.MAAKAY_PAYMENT_ACCOUNT_NUMBER:
                     direction = Transaction.INCOMING

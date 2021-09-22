@@ -1,6 +1,7 @@
 from uuid import uuid4
 
 from django.db import models
+from django.conf import settings
 
 from core.models.users import User
 
@@ -25,16 +26,24 @@ class MaakayUser(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def get_decimal_total_won_in_challenges(self):
-        return self.total_won_in_challenges / 100000000
+        amount = self.total_won_in_challenges / settings.TNBC_MULTIPLICATION_FACTOR
+        rounded_amount = round(amount, 4)
+        return rounded_amount
 
     def get_decimal_total_won_in_tournaments(self):
-        return self.total_won_in_tournaments / 100000000
+        amount = self.total_won_in_tournaments / settings.TNBC_MULTIPLICATION_FACTOR
+        rounded_amount = round(amount, 4)
+        return rounded_amount
 
     def get_decimal_total_tip_sent(self):
-        return self.total_tip_sent / 100000000
+        amount = self.total_tip_sent / settings.TNBC_MULTIPLICATION_FACTOR
+        rounded_amount = round(amount, 4)
+        return rounded_amount
 
     def get_decimal_total_tip_received(self):
-        return self.total_tip_received / 100000000
+        amount = self.total_tip_received / settings.TNBC_MULTIPLICATION_FACTOR
+        rounded_amount = round(amount, 4)
+        return rounded_amount
 
     def __str__(self):
         return f"User: {self.user};"
@@ -52,10 +61,10 @@ class UserTip(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    title = models.CharField(max_length=255, default="")
+    title = models.CharField(max_length=255)
 
     def get_decimal_amount(self):
-        amount = self.amount / 100000000
+        amount = self.amount / settings.TNBC_MULTIPLICATION_FACTOR
         rounded_amount = round(amount, 4)
         return rounded_amount
 
