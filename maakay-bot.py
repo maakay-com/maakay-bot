@@ -1,4 +1,3 @@
-from datetime import datetime
 import os
 from discord.colour import Color
 import humanize
@@ -208,8 +207,6 @@ async def user_profile(ctx, user: discord.Member = None):
 
     await ctx.defer()
 
-    
-
     if user:
         obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
         embed = discord.Embed(title=f"{user.name}'s Maakay Profile", description="", color=Color.orange())
@@ -222,10 +219,10 @@ async def user_profile(ctx, user: discord.Member = None):
     user_profile = await sync_to_async(MaakayUser.objects.get_or_create)(user=obj)
 
     embed.add_field(name='Total Challenges Won', value=f"{user_profile[0].total_challenges_won}")
-    embed.add_field(name='Total Tournaments Won', value=f"{user_profile[0].total_tournaments_won}")
     embed.add_field(name='TNBC won in challenges', value=f"{user_profile[0].get_decimal_total_won_in_challenges()}")
-    embed.add_field(name='TNBC won in tournaments', value=f"{user_profile[0].get_decimal_total_won_in_tournaments()}")
-    embed.add_field(name='Total Times Referred', value=f"{user_profile[0].total_referred}")
+    embed.add_field(name='TNBC won in hosted challenges', value=f"{user_profile[0].get_decimal_total_won_in_tournaments()}")
+    embed.add_field(name='Total Challenges Hosted', value=f"{user_profile[0].total_challenges_hosted}")
+    embed.add_field(name='TNBC Spent Hosting Challenges', value=f"{convert_to_decimal(user_profile[0].total_amount_hosted)}")
     embed.add_field(name='Total Tip Sent', value=f"{user_profile[0].get_decimal_total_tip_sent()}")
     embed.add_field(name='Total Tip Received', value=f"{user_profile[0].get_decimal_total_tip_received()}")
 
@@ -241,52 +238,65 @@ async def user_profile(ctx, user: discord.Member = None):
                           required=True
                       ),
                       create_option(
-                          name="message",
-                          description="Message for the tip.",
-                          option_type=3,
-                          required=True
-                      ),
-                      create_option(
                           name="amount",
                           description="Enter TNBC amount you want to escrow.",
                           option_type=10,
                           required=True
+                      ),
+                      create_option(
+                          name="message",
+                          description="Message for the tip.",
+                          option_type=3,
+                          required=False
                       )
                   ]
                   )
-async def tip_new(ctx, user: discord.Member, message: str, amount: float):
+async def tip_new(ctx, user: discord.Member, amount: float, message: str = None):
 
     sender, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
     recepient, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(user.id))
 
     if sender != recepient:
 
-        total_amount = int(amount * settings.TNBC_MULTIPLICATION_FACTOR)
-        total_amount_including_fees = total_amount + settings.TIP_FEE
+        if amount >= 1:
 
-        if sender.get_available_balance() < total_amount_including_fees:
-            available_balace_including_fee = sender.get_available_balance() - settings.TIP_FEE
-            decimal_available_balace_including_fee = convert_to_decimal(available_balace_including_fee)
-            embed = discord.Embed(title="Inadequate Funds!!",
-                                  description=f"You only have {decimal_available_balace_including_fee} tippable TNBC available. \n Use `/user deposit` to deposit TNBC!!", color=Color.orange())
-            await ctx.send(embed=embed, hidden=True)
+            total_amount = int(amount * settings.TNBC_MULTIPLICATION_FACTOR)
+            total_amount_including_fees = total_amount + settings.TIP_FEE
 
+            if sender.get_available_balance() < total_amount_including_fees:
+
+                await ctx.defer(hidden=True)
+
+                available_balace_including_fee = sender.get_available_balance() - settings.TIP_FEE
+                decimal_available_balace_including_fee = convert_to_decimal(available_balace_including_fee)
+                embed = discord.Embed(title="Inadequate Funds!!",
+                                      description=f"You only have {decimal_available_balace_including_fee} tippable TNBC available. \n Use `/user deposit` to deposit TNBC!!", color=Color.orange())
+                await ctx.send(embed=embed, hidden=True)
+
+            else:
+
+                await ctx.defer()
+
+                sender.balance -= total_amount_including_fees
+                recepient.balance += total_amount
+                sender.save()
+                recepient.save()
+                UserTip.objects.create(sender=sender, recepient=recepient, amount=total_amount, title=message)
+
+                sender_profile = MaakayUser.objects.get_or_create(user=sender)
+                recepient_profile = MaakayUser.objects.get_or_create(user=recepient)
+                sender_profile[0].total_tip_sent += total_amount_including_fees
+                sender_profile[0].save()
+                recepient_profile[0].total_tip_received += total_amount
+                recepient_profile[0].save()
+
+                if message:
+                    await ctx.send(f"{ctx.author.mention} tipped {user.mention} {amount} TNBC for *{message}*.")
+                else:
+                    await ctx.send(f"{ctx.author.mention} tipped {user.mention} {amount} TNBC.")
         else:
-            sender.balance -= total_amount_including_fees
-            recepient.balance += total_amount
-            sender.save()
-            recepient.save()
-            UserTip.objects.create(sender=sender, recepient=recepient, amount=total_amount, title=message)
-
-            sender_profile = MaakayUser.objects.get_or_create(user=sender)
-            recepient_profile = MaakayUser.objects.get_or_create(user=recepient)
-            sender_profile[0].total_tip_sent += total_amount_including_fees
-            sender_profile[0].save()
-            recepient_profile[0].total_tip_received += total_amount
-            recepient_profile[0].save()
-
-            await ctx.send(f"{ctx.author.mention} tipped {user.mention} {amount} TNBC for *{message}*.")
-
+            embed = discord.Embed(title="Sorry!", description="You can not tip less than 1 TNBC.")
+            await ctx.send(embed=embed, hidden=True)
     else:
         embed = discord.Embed(title="Sorry!", description="We can not let you tip yourself.")
         embed.set_image(url="https://i.ibb.co/YWdpD99/e33.jpg")
@@ -303,7 +313,7 @@ async def tip_history(ctx):
     if UserTip.objects.filter(Q(sender=obj) | Q(recepient=obj)).exists():
 
         tips = (await sync_to_async(UserTip.objects.filter)(Q(sender=obj) | Q(recepient=obj))).order_by('-created_at')[:5]
-        
+
         embed = discord.Embed(color=Color.orange())
 
         for tip in tips:
@@ -363,7 +373,7 @@ async def challenge_new(ctx, title: str, amount: float, contender: discord.Membe
             if challenger_user.get_available_balance() >= total_amount:
                 challenger_user.locked += total_amount
                 challenger_user.save()
-                embed.add_field(name='Challenge Invitation', value=f"{contender.mention}, {ctx.author.mention} invited you on *{title}* for {amount} TNBC.", inline=False)
+                embed.add_field(name='Challenge Invitation', value=f"{contender.mention}, {ctx.author.mention} invited you on *{title}* for **{amount} TNBC**.", inline=False)
                 embed.add_field(name='Referee Invitation', value=f"{referee.mention}, {ctx.author.mention} invited you to be referee of *{title}*.")
                 challenge = await sync_to_async(Challenge.objects.create)(challenger=challenger_user, contender=contender_user, referee=referee_user, title=title, amount=total_amount)
                 await ctx.send(f"{contender.mention} {referee.mention}", embed=embed, components=[create_actionrow(create_button(custom_id=f"challenge_accept_{challenge.uuid}", style=ButtonStyle.green, label="Accept"), create_button(custom_id=f"challenge_reject_{challenge.uuid}", style=ButtonStyle.red, label="Reject"))])
@@ -427,11 +437,12 @@ async def challenge_reward(ctx, challenge_id: str, user: discord.Member):
 
             winner.balance += challenge.amount - settings.CHALLENGE_FEE
             winner.locked -= challenge.amount
+            winner.save()
             MaakayUser.objects.filter(user=winner).update(total_won_in_challenges=F('total_won_in_challenges') + challenge.amount - settings.CHALLENGE_FEE,
                                                           total_challenges_won=F('total_challenges_won') + 1)
-            winner.save()
+            MaakayUser.objects.filter(user=referee).update(total_referred=F('total_referred') + 1)
 
-            embed.add_field(name="Yaayy", value=f"{user.mention} is rewarded {challenge.amount} TNBC for *{challenge.title}*.")
+            embed.add_field(name="Yaayy", value=f"{user.mention} is rewarded **{convert_to_decimal(challenge.amount - settings.CHALLENGE_FEE)}** TNBC for *{challenge.title}*.")
             embed.set_image(url="https://i.ibb.co/y8QBmQc/download.png")
             await ctx.send(f"{user.mention} {loser.mention}", embed=embed)
 
@@ -490,24 +501,24 @@ async def challenge_all(ctx):
                 role = "Contender"
             else:
                 role = "Referee"
-            embed.add_field(name=f"{challenge.title}", value=f"> ID: {challenge.uuid_hex}\n> Amount: {convert_to_decimal(challenge.amount)}\n> Role: {role}", inline=False)
+            embed.add_field(name=f"{challenge.title}", value=f"> ID: {challenge.uuid_hex}\n> Amount: {convert_to_decimal(challenge.amount)} TNBC\n> Role: {role}", inline=False)
     else:
         embed.add_field(name="404!", value="You have no ongoing challenges available.")
 
     await ctx.send(embed=embed, hidden=True)
 
 
-@slash.subcommand(base="tournament", name="new", description="Create a new tournament!!",
+@slash.subcommand(base="host", name="challenge", description="Host challenge between users!!",
                   options=[
                       create_option(
                           name="title",
-                          description="The title of the tournament.",
+                          description="The title of the hosted challenge.",
                           option_type=3,
                           required=True
                       ),
                       create_option(
                           name="description",
-                          description="More info about the tournament.",
+                          description="More info about the hosted challenge.",
                           option_type=3,
                           required=True
                       ),
@@ -518,14 +529,32 @@ async def challenge_all(ctx):
                           required=True
                       ),
                       create_option(
-                          name="url",
-                          description="Here the users will get more info.",
-                          option_type=3,
+                          name="player1",
+                          description="User that'll be participant.",
+                          option_type=6,
+                          required=True
+                      ),
+                      create_option(
+                          name="player2",
+                          description="User that'll be participant.",
+                          option_type=6,
+                          required=True
+                      ),
+                      create_option(
+                          name="player3",
+                          description="User that'll be participant.",
+                          option_type=6,
+                          required=False
+                      ),
+                      create_option(
+                          name="player4",
+                          description="User that'll be participant.",
+                          option_type=6,
                           required=False
                       )
                   ]
                   )
-async def tournament_new(ctx, title: str, description: str, amount: float, url: str = None):
+async def tournament_new(ctx, title: str, description: str, amount: float, player1: discord.Member, player2: discord.Member, player3: discord.Member = None, player4: discord.Member = None):
 
     await ctx.defer(hidden=True)
 
@@ -535,7 +564,7 @@ async def tournament_new(ctx, title: str, description: str, amount: float, url: 
 
     if total_amount < settings.MINIMUM_TOURNAMENT_AMOUNT:
         embed = discord.Embed(title="Sorry",
-                              description=f"You cannot create tournaments of less than {convert_to_decimal(settings.MINIMUM_TOURNAMENT_AMOUNT)} TNBC.", color=Color.orange())
+                              description=f"You cannot host challenges less than {convert_to_decimal(settings.MINIMUM_TOURNAMENT_AMOUNT)} TNBC.", color=Color.orange())
         await ctx.send(embed=embed, hidden=True)
     else:
         if discord_user.get_available_balance() < total_amount:
@@ -546,22 +575,33 @@ async def tournament_new(ctx, title: str, description: str, amount: float, url: 
 
             tournament_channel = client.get_channel(int(settings.TOURNAMENT_CHANNEL_ID))
 
-            tournament_embed = discord.Embed(title=title, description=description)
-            tournament_embed.add_field(name="Reward (TNBC)", value=amount)
-            tournament_embed.add_field(name="More info", value=url)
-            tournament_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+            tournament_embed = discord.Embed(title="Challenge Hosted Alert!!", description=f"{ctx.author.mention} has hosted a challenge.")
+            tournament_embed.add_field(name="Title", value=title)
+            tournament_embed.add_field(name="Description", value=description)
+            tournament_embed.add_field(name="Reward (TNBC)", value=f"**{amount}**", inline=False)
+            tournament_embed.set_thumbnail(url=ctx.author.avatar_url)
 
-            await tournament_channel.send(embed=tournament_embed)
+            if player3:
+                if player4:
+                    message = f"{player1.mention} {player2.mention} {player3.mention} {player4.mention}"
+                else:
+                    message = f"{player1.mention} {player2.mention} {player3.mention}"
+            else:
+                message = f"{player1.mention} {player2.mention}"
 
-            Tournament.objects.create(title=title, description=description, url=url, amount=total_amount, hosted_by=discord_user)
+            await tournament_channel.send(message, embed=tournament_embed)
+
+            Tournament.objects.create(title=title, description=description, amount=total_amount, hosted_by=discord_user)
+            MaakayUser.objects.filter(user=discord_user).update(total_amount_hosted=F('total_amount_hosted') + total_amount,
+                                                                total_challenges_hosted=F('total_challenges_hosted') + 1)
 
             discord_user.locked += total_amount
             discord_user.save()
 
-            await ctx.send("Tournament created successfully.", hidden=True)
+            await ctx.send("Challenge Hosted successfully.", hidden=True)
 
 
-@slash.subcommand(base="tournament", name="reward", description="Reward the challenge winner!!",
+@slash.subcommand(base="host", name="reward", description="Reward the challenge winner!!",
                   options=[
                       create_option(
                           name="tournament_id",
@@ -605,33 +645,32 @@ async def tournament_reward(ctx, tournament_id: str, user: discord.Member):
             winner = await client.fetch_user(user.id)
             hosted_by = await client.fetch_user(ctx.author.id)
             tournament_channel = client.get_channel(int(settings.TOURNAMENT_CHANNEL_ID))
-            tournament_embed = discord.Embed(title="Tournament Ended", description="")
+            tournament_embed = discord.Embed(title="Hosted Challenge Ended", description="")
             tournament_embed.add_field(name="Title", value=tournament.title)
             tournament_embed.add_field(name="Description", value=tournament.description)
-            tournament_embed.add_field(name="Reward (TNBC)", value=convert_to_decimal(tournament.amount - settings.TOURNAMENT_FEE))
-            tournament_embed.add_field(name="More info", value=tournament.url)
+            tournament_embed.add_field(name="Reward (TNBC)", value=f"**{convert_to_decimal(tournament.amount - settings.TOURNAMENT_FEE)}**", inline=False)
             tournament_embed.add_field(name="Winner", value=winner.mention)
             tournament_embed.add_field(name="Hosted By", value=hosted_by.mention)
-            tournament_embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
+            tournament_embed.set_thumbnail(url=ctx.author.avatar_url)
             await tournament_channel.send(f"{winner.mention}", embed=tournament_embed)
 
-            embed.add_field(name="Success!", value="The tournament is rewarded successfully.")
+            embed.add_field(name="Success!", value="The hosted challenge is rewarded successfully.")
             await ctx.send(embed=embed, hidden=True)
         else:
-            embed.add_field(name="Sorry!", value="The tournament is either cancelled or completed.")
+            embed.add_field(name="Sorry!", value="The hosted challenge is either cancelled or completed.")
             await ctx.send(embed=embed, hidden=True)
     else:
         embed.add_field(name="Sorry!", value="You donot have correct permission to reward this challenge.")
         await ctx.send(embed=embed, hidden=True)
 
 
-@slash.subcommand(base="tournament", name="all", description="list all the active challenges!!")
+@slash.subcommand(base="hosted", name="all", description="list all the active hosted challenges!!")
 async def tournament_all(ctx):
 
     await ctx.defer(hidden=True)
     discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
-    embed = discord.Embed(title="Active Tournaments", color=Color.orange())
+    embed = discord.Embed(title="Active Hosted Challenges", color=Color.orange())
 
     if Tournament.objects.filter(Q(hosted_by=discord_user), Q(status=Tournament.ONGOING)).exists():
 
@@ -639,12 +678,12 @@ async def tournament_all(ctx):
         for tournament in tournaments:
             embed.add_field(name=f"**{tournament.title}**\n *{tournament.description}*", value=f"> ID: {tournament.uuid_hex}\n> Role: Host\n> Amount: {convert_to_decimal(tournament.amount)}", inline=False)
     else:
-        embed.add_field(name="404!", value="You have no ongoing tournaments available.")
+        embed.add_field(name="404!", value="You have no ongoing hosted challenges available.")
 
     await ctx.send(embed=embed, hidden=True)
 
 
-@slash.subcommand(base="tournament", name="history", description="list all the challenges user has participated in!!")
+@slash.subcommand(base="hosted", name="history", description="list all the challenges user has participated in!!")
 async def tournament_history(ctx):
 
     await ctx.defer(hidden=True)
@@ -666,16 +705,16 @@ async def tournament_history(ctx):
             embed.add_field(name=f"**{tournament.title}**\n *{tournament.description}*", value=f"> Role: {role}\n > Amount: {convert_to_decimal(tournament.amount)} TNBC", inline=False)
 
     else:
-        embed.add_field(name='404!', value="You have not participated in any tournament.")
+        embed.add_field(name='404!', value="You have not hosted/ participated in hosted challenges.")
 
     await ctx.send(embed=embed, hidden=True)
-    
+
+
 @slash.slash(name="help", description="List of Commands!!")
 async def help_(ctx):
 
     embed = discord.Embed(title="Commands", color=Color.orange())
     embed.set_footer(text="Fields with * are required!!\n \u200b")
-    embed.timestamp = datetime.utcnow()
     embed.set_thumbnail(url=client.user.avatar_url)
 
     embed.add_field(name="/balance", value="Check your balance.", inline=False)
@@ -690,11 +729,12 @@ async def help_(ctx):
     embed.add_field(name="/challenge reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!", inline=False)
     embed.add_field(name="/challenge history", value="Show the history of challenges in which the user participated!!", inline=False)
     embed.add_field(name="/challenge all", value="List all the active challenges!!", inline=False)
-    embed.add_field(name="/tournament `<title>*` `<description>*` `<amount>*` `<url for more info>*`", value="Create a new tournament!!", inline=False)
-    embed.add_field(name="/tournament `<tournament id>*` `<challenge winner>*`", value="Reward the tournament winner!!", inline=False)
-    embed.add_field(name="/tournament history", value="List of Tournaments you participated in!!", inline=False)
+    embed.add_field(name="/host challenge `<title>*` `<description>*` `<amount>*` `<url for more info>*`", value="Host a new challenge!!", inline=False)
+    embed.add_field(name="/host reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!!", inline=False)
+    embed.add_field(name="/hosted history", value="List of hosted challenges you participated in!!", inline=False)
+    embed.add_field(name="/hosted all", value="List of active hosted challenges!!", inline=False)
 
-    await ctx.send(embed=embed)
+    await ctx.send(embed=embed, hidden=True)
 
 
 @client.event
@@ -734,7 +774,7 @@ async def on_component(ctx: ComponentContext):
                             challenge.save()
                             embed.add_field(name="Accepted", value=f"Challenge accepted by contender {contender.mention}", inline=False)
                             embed.add_field(name="Title", value=challenge.title)
-                            embed.add_field(name="Amount (TNBC)", value=challenge.get_decimal_amount())
+                            embed.add_field(name="Amount (TNBC)", value=f"**{challenge.get_decimal_amount()}**")
                             embed.add_field(name="Challenger", value=f"{challenger.mention}")
                             embed.add_field(name="Contender", value=f"{contender.mention}")
                             embed.add_field(name="Referee", value=f"{referee.mention}")
@@ -765,7 +805,7 @@ async def on_component(ctx: ComponentContext):
                         challenge.save()
                         embed.add_field(name="Accepted", value=f"Challenge accepted by referee {referee.mention}", inline=False)
                         embed.add_field(name="Title", value=challenge.title)
-                        embed.add_field(name="Amount (TNBC)", value=challenge.get_decimal_amount())
+                        embed.add_field(name="Amount (TNBC)", value=f"**{challenge.get_decimal_amount()}**")
                         embed.add_field(name="Challenger", value=f"{challenger.mention}")
                         embed.add_field(name="Contender", value=f"{contender.mention}")
                         embed.add_field(name="Referee", value=f"{referee.mention}")
@@ -795,7 +835,8 @@ async def on_component(ctx: ComponentContext):
 
         scan_chain()
 
-        # check_confirmation()
+        if os.environ['DJANGO_SETTINGS_MODULE'] == 'config.settings.production':
+            check_confirmation()
 
         match_transaction()
 

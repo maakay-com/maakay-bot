@@ -53,8 +53,10 @@ To run django server, navigate to API directory and use command `python manage.p
 
 `/challenge history`: List your challenge history.
 
-`/tournament new <title> <description> <amount> <url (optional)>`: Start a new tournament with big prizes.
+`/host challenge <title> <description> <amount> <url (optional)>`: Host a new challenge with big prizes.
 
-`/tournament reward <tournament_id> <winner>`: Reward the winner of the tournament.
+`/host reward <challenge_id> <winner>`: Reward the winner of the challenge.
 
-`/tournament history`: View your tournament history.
+`/hosted history`: View your hosted challenge history.
+
+`/hosted all`: View your active hosted challenges.

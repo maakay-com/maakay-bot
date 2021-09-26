@@ -15,6 +15,9 @@ class MaakayUser(models.Model):
     total_won_in_challenges = models.BigIntegerField(default=0)
     total_won_in_tournaments = models.BigIntegerField(default=0)
 
+    total_challenges_hosted = models.BigIntegerField(default=0)
+    total_amount_hosted = models.BigIntegerField(default=0)
+
     total_tournaments_won = models.IntegerField(default=0)
     total_challenges_won = models.IntegerField(default=0)
     total_referred = models.IntegerField(default=0)
@@ -61,7 +64,7 @@ class UserTip(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, null=True, blank=True)
 
     def get_decimal_amount(self):
         amount = self.amount / settings.TNBC_MULTIPLICATION_FACTOR
