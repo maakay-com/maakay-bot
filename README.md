@@ -16,6 +16,7 @@ BOT_MANAGER_ID  # Discord ID of the user who can use /kill command
 MAAKAY_DISCORD_TOKEN  # Discord Token of the bot
 SECRET_KEY  # Django Secret Key (Just a random string)
 TOURNAMENT_CHANNEL_ID  # Discord Channel ID of tournament channel
+CHECK_TNBC_CONFIRMATION  # Flag to check or not to check confirmations (True/ False)
 ```
 
 Navigate to API and create required database and super user.

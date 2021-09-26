@@ -97,7 +97,7 @@ def scan_chain():
 
 def match_transaction():
 
-    if os.environ['DJANGO_SETTINGS_MODULE'] == 'config.settings.production':
+    if os.environ['CHECK_TNBC_CONFIRMATION'] == True:
         confirmed_txs = Transaction.objects.filter(confirmation_status=Transaction.CONFIRMED,
                                                    transaction_status=Transaction.NEW,
                                                    direction=Transaction.INCOMING)

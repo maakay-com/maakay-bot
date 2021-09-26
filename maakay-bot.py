@@ -835,7 +835,7 @@ async def on_component(ctx: ComponentContext):
 
         scan_chain()
 
-        if os.environ['DJANGO_SETTINGS_MODULE'] == 'config.settings.production':
+        if os.environ['CHECK_TNBC_CONFIRMATION'] == True:
             check_confirmation()
 
         match_transaction()
