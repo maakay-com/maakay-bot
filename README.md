@@ -17,6 +17,7 @@ MAAKAY_DISCORD_TOKEN  # Discord Token of the bot
 SECRET_KEY  # Django Secret Key (Just a random string)
 TOURNAMENT_CHANNEL_ID  # Discord Channel ID of tournament channel
 CHECK_TNBC_CONFIRMATION  # Flag to check or not to check confirmations (True/ False)
+BANK_IP  # TNBC Bank IP we're connecting to.
 ```
 
 Navigate to API and create required database and super user.
