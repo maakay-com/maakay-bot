@@ -1,4 +1,3 @@
-from datetime import datetime
 import os
 from discord.colour import Color
 import humanize
@@ -220,10 +219,10 @@ async def user_profile(ctx, user: discord.Member = None):
     user_profile = await sync_to_async(MaakayUser.objects.get_or_create)(user=obj)
 
     embed.add_field(name='Total Challenges Won', value=f"{user_profile[0].total_challenges_won}")
-    embed.add_field(name='Total Tournaments Won', value=f"{user_profile[0].total_tournaments_won}")
     embed.add_field(name='TNBC won in challenges', value=f"{user_profile[0].get_decimal_total_won_in_challenges()}")
-    embed.add_field(name='TNBC won in tournaments', value=f"{user_profile[0].get_decimal_total_won_in_tournaments()}")
-    embed.add_field(name='Total Times Referred', value=f"{user_profile[0].total_referred}")
+    embed.add_field(name='TNBC won in hosted challenges', value=f"{user_profile[0].get_decimal_total_won_in_tournaments()}")
+    embed.add_field(name='Total Challenges Hosted', value=f"{user_profile[0].total_challenges_hosted}")
+    embed.add_field(name='TNBC Spent Hosting Challenges', value=f"{convert_to_decimal(user_profile[0].total_amount_hosted)}")
     embed.add_field(name='Total Tip Sent', value=f"{user_profile[0].get_decimal_total_tip_sent()}")
     embed.add_field(name='Total Tip Received', value=f"{user_profile[0].get_decimal_total_tip_received()}")
 
@@ -513,13 +512,13 @@ async def challenge_all(ctx):
                   options=[
                       create_option(
                           name="title",
-                          description="The title of the tournament.",
+                          description="The title of the hosted challenge.",
                           option_type=3,
                           required=True
                       ),
                       create_option(
                           name="description",
-                          description="More info about the tournament.",
+                          description="More info about the hosted challenge.",
                           option_type=3,
                           required=True
                       ),
@@ -593,6 +592,8 @@ async def tournament_new(ctx, title: str, description: str, amount: float, playe
             await tournament_channel.send(message, embed=tournament_embed)
 
             Tournament.objects.create(title=title, description=description, amount=total_amount, hosted_by=discord_user)
+            MaakayUser.objects.filter(user=discord_user).update(total_amount_hosted=F('total_amount_hosted') + total_amount,
+                                                                total_challenges_hosted=F('total_challenges_hosted') + 1)
 
             discord_user.locked += total_amount
             discord_user.save()
@@ -728,10 +729,10 @@ async def help_(ctx):
     embed.add_field(name="/challenge reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!", inline=False)
     embed.add_field(name="/challenge history", value="Show the history of challenges in which the user participated!!", inline=False)
     embed.add_field(name="/challenge all", value="List all the active challenges!!", inline=False)
-    embed.add_field(name="/tournament `<title>*` `<description>*` `<amount>*` `<url for more info>*`", value="Create a new tournament!!", inline=False)
-    embed.add_field(name="/tournament `<tournament id>*` `<challenge winner>*`", value="Reward the tournament winner!!", inline=False)
-    embed.add_field(name="/tournament history", value="List of Tournaments you participated in!!", inline=False)
-    embed.add_field(name="/tournament all", value="List of Tournaments your active tournaments!!", inline=False)
+    embed.add_field(name="/host challenge `<title>*` `<description>*` `<amount>*` `<url for more info>*`", value="Host a new challenge!!", inline=False)
+    embed.add_field(name="/host reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!!", inline=False)
+    embed.add_field(name="/hosted history", value="List of hosted challenges you participated in!!", inline=False)
+    embed.add_field(name="/hosted all", value="List of active hosted challenges!!", inline=False)
 
     await ctx.send(embed=embed, hidden=True)
 
@@ -834,7 +835,8 @@ async def on_component(ctx: ComponentContext):
 
         scan_chain()
 
-        # check_confirmation()
+        if os.environ['DJANGO_SETTINGS_MODULE'] == 'config.settings.production':
+            check_confirmation()
 
         match_transaction()
 
