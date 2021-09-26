@@ -61,7 +61,7 @@ class UserTip(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=255, null=True, blank=True)
 
     def get_decimal_amount(self):
         amount = self.amount / settings.TNBC_MULTIPLICATION_FACTOR
