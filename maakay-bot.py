@@ -714,7 +714,7 @@ async def tournament_history(ctx):
 async def help_(ctx):
 
     embed = discord.Embed(title="Commands", color=Color.orange())
-    embed.set_footer(text="Fields with * are required!!\n \u200b")
+    embed.set_footer(text="Fields with * are required!!")
     embed.set_thumbnail(url=client.user.avatar_url)
 
     embed.add_field(name="/balance", value="Check your balance.", inline=False)
