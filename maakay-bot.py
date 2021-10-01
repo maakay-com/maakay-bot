@@ -1,20 +1,18 @@
 import os
 from discord.colour import Color
 import humanize
-import sys
 import django
-from discord_slash.context import ComponentContext
 import discord
 from asgiref.sync import sync_to_async
 from discord_slash import SlashCommand
+from discord_slash.context import ComponentContext
 from discord_slash.utils.manage_commands import create_option
 from discord_slash.utils.manage_components import create_button, create_actionrow
 from discord_slash.model import ButtonStyle
 
 
 # Django Setup on bot
-sys.path.append(os.getcwd() + '/API')
-DJANGO_DIRECTORY = os.getcwd() + '/API'
+DJANGO_DIRECTORY = os.getcwd()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", os.environ["DJANGO_SETTINGS_MODULE"])
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
@@ -33,6 +31,9 @@ from maakay.shortcuts import convert_to_decimal
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
+
+CHALLENGE_FEE_MULTIPLICATION = (100 - settings.CHALLENGE_FEE) / 100
+TOURNAMENT_FEE_MULTIPLICATION = (100 - settings.TOURNAMENT_FEE) / 100
 
 # Initialize the Slash commands
 client = discord.Client(intents=discord.Intents.all())
@@ -154,7 +155,7 @@ async def user_withdraw(ctx, amount: int):
                             obj.balance -= converted_amount_plus_fee
                             obj.save()
                             UserTransactionHistory.objects.create(user=obj, amount=converted_amount_plus_fee, type=UserTransactionHistory.WITHDRAW, transaction=txs)
-                            statistic = Statistic.objects.first()
+                            statistic, created = Statistic.objects.get_or_create(title="main")
                             statistic.total_balance -= converted_amount_plus_fee
                             statistic.save()
                             embed = discord.Embed(title="Coins Withdrawn!",
@@ -435,7 +436,7 @@ async def challenge_reward(ctx, challenge_id: str, user: discord.Member):
             challenge.status = Challenge.COMPLETED
             challenge.save()
 
-            winner.balance += challenge.amount - settings.CHALLENGE_FEE
+            winner.balance += challenge.amount * CHALLENGE_FEE_MULTIPLICATION
             winner.locked -= challenge.amount
             winner.save()
             MaakayUser.objects.filter(user=winner).update(total_won_in_challenges=F('total_won_in_challenges') + challenge.amount - settings.CHALLENGE_FEE,
@@ -636,7 +637,7 @@ async def tournament_reward(ctx, tournament_id: str, user: discord.Member):
             discord_user.locked -= tournament.amount
             discord_user.save()
 
-            winner.balance += tournament.amount - settings.TOURNAMENT_FEE
+            winner.balance += tournament.amount * TOURNAMENT_FEE_MULTIPLICATION
             winner.save()
 
             MaakayUser.objects.filter(user=winner).update(total_won_in_tournaments=F('total_won_in_tournaments') + tournament.amount - settings.TOURNAMENT_FEE,
@@ -835,7 +836,7 @@ async def on_component(ctx: ComponentContext):
 
         scan_chain()
 
-        if os.environ['CHECK_TNBC_CONFIRMATION'] == True:
+        if os.environ['CHECK_TNBC_CONFIRMATION'] is True:
             check_confirmation()
 
         match_transaction()
@@ -848,6 +849,9 @@ async def on_component(ctx: ComponentContext):
         embed.add_field(name='Available Balance', value=obj.get_decimal_available_balance())
 
         await ctx.send(embed=embed, hidden=True, components=[create_actionrow(create_button(custom_id="chain-scan", style=ButtonStyle.green, label="Scan Again?"))])
+
+    else:
+        await ctx.send("Where did you find this button??", hidden=True)
 
 
 @slash.slash(name="kill", description="Kill the bot!!")
