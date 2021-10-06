@@ -46,7 +46,7 @@ async def on_ready():
     print("------------------------------------")
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="/help"))
 
-
+    
 @slash.slash(name="help", description="List of Commands!!")
 async def help_(ctx):
 
@@ -77,7 +77,7 @@ for filename in os.listdir('./cogs'):
     if filename.endswith('.py'):
         bot.load_extension(f'cogs.{filename[:-3]}')
 
-
+        
 @bot.event
 async def on_component(ctx: ComponentContext):
 
