@@ -1,4 +1,3 @@
-from itertools import combinations_with_replacement
 import os
 from discord.colour import Color
 import django
@@ -6,7 +5,7 @@ import discord
 from asgiref.sync import sync_to_async
 from discord_slash import SlashCommand
 from discord_slash.context import ComponentContext
-from discord_slash.utils.manage_commands import create_option
+from discord_slash.utils.manage_commands import create_choice, create_option
 from discord_slash.utils.manage_components import create_button, create_actionrow
 from discord_slash.model import ButtonStyle
 from discord.ext import commands
@@ -47,10 +46,10 @@ async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="/help"))
 
 
-@slash.slash(name="help", description="List of Commands!!")
-async def help_(ctx):
 
-    embed = discord.Embed(title="Commands", color=Color.orange())
+@slash.subcommand(base="help", name="all", description="List of Commands!!")
+async def help_all(ctx):
+    embed = discord.Embed(title="Commands", color=Color.orange(), description="Use `/help <category>` for category specific commands")
     embed.set_footer(text="Fields with * are required!!")
     embed.set_thumbnail(url=bot.user.avatar_url)
 
@@ -70,8 +69,61 @@ async def help_(ctx):
     embed.add_field(name="/host reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!!", inline=False)
     embed.add_field(name="/hosted history", value="List of hosted challenges you participated in!!", inline=False)
     embed.add_field(name="/hosted all", value="List of active hosted challenges!!", inline=False)
+    await ctx.send(embed=embed, hidden=True)
+
+@slash.subcommand(base="help", name="general", description="List of Commands from General Category")
+async def help_general(ctx):
+    embed = discord.Embed(title="General Commands", color=Color.orange())
+    embed.set_footer(text="Fields with * are required!!")
+    embed.set_thumbnail(url=bot.user.avatar_url)
+
+    embed.add_field(name="/balance", value="Check your balance.", inline=False)
+    embed.add_field(name="/deposit tnbc", value="Deposit TNBC into your maakay account.", inline=False)
+    embed.add_field(name="/set_withdrawl_address tnbc `<your withdrawl address>*`", value="Set a new withdrawl address.", inline=False)
+    embed.add_field(name="/withdraw tnbc `<amount>*`", value="Withdraw TNBC into your account.", inline=False)
+    embed.add_field(name="/transactions tnbc", value="Check Transaction History!!", inline=False)
+    embed.add_field(name="/profile `<user you want to check profile of>*`", value="Check profile of an user.", inline=False)
 
     await ctx.send(embed=embed, hidden=True)
+
+@slash.subcommand(base="help", name="tip", description="List of Commands from Tip Category")
+async def help_all(ctx):
+    embed = discord.Embed(title="Tip Commands", color=Color.orange())
+    embed.set_footer(text="Fields with * are required!!")
+    embed.set_thumbnail(url=bot.user.avatar_url)
+
+    embed.add_field(name="/tip tnbc `<amount>*` `<user you want to tip>*` `<title for the tip>*`", value="Tip another user!!", inline=False)
+    embed.add_field(name="/tip history", value="View tip history!!", inline=False)
+
+    await ctx.send(embed=embed, hidden=True)
+
+
+@slash.subcommand(base="help", name="challenge", description="List of Commands from Challenge Category")
+async def help_all(ctx):
+    embed = discord.Embed(title="Challenge Commands", color=Color.orange())
+    embed.set_footer(text="Fields with * are required!!")
+    embed.set_thumbnail(url=bot.user.avatar_url)
+
+    embed.add_field(name="/challenge new `<title of the challenge>*` `<amount>*` `<contender>*` `<referee>*`", value="Create a new challenge!!", inline=False)
+    embed.add_field(name="/challenge reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!", inline=False)
+    embed.add_field(name="/challenge history", value="Show the history of challenges in which the user participated!!", inline=False)
+    embed.add_field(name="/challenge all", value="List all the active challenges!!", inline=False)
+
+    await ctx.send(embed=embed, hidden=True)
+
+@slash.subcommand(base="help", name="hosted_challenge", description="List of Commands from Hosted Challenge Category")
+async def help_all(ctx):
+    embed = discord.Embed(title="Hosted Challenge Commands", color=Color.orange())
+    embed.set_footer(text="Fields with * are required!!")
+    embed.set_thumbnail(url=bot.user.avatar_url)
+
+    embed.add_field(name="/host challenge `<title>*` `<description>*` `<amount>*` `<url for more info>*`", value="Host a new challenge!!", inline=False)
+    embed.add_field(name="/host reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!!", inline=False)
+    embed.add_field(name="/hosted history", value="List of hosted challenges you participated in!!", inline=False)
+    embed.add_field(name="/hosted all", value="List of active hosted challenges!!", inline=False)
+
+    await ctx.send(embed=embed, hidden=True)
+
 
 for filename in os.listdir('./cogs'):
     if filename.endswith('.py'):
