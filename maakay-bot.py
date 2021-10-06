@@ -72,9 +72,14 @@ async def user_deposit(ctx):
 
     obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
+    qr_data = f"{{'address':{settings.TNBCROW_BOT_ACCOUNT_NUMBER},'memo':'{obj.memo}'}}"
+
     embed = discord.Embed(title="Send TNBC to the address with memo!!", color=Color.orange())
+    embed.add_field(name='Warning', value="Do not deposit TNBC with Keysign Mobile Wallet/ Keysign Extension or **you'll lose your coins**.", inline=False)
     embed.add_field(name='Address', value=settings.MAAKAY_PAYMENT_ACCOUNT_NUMBER, inline=False)
     embed.add_field(name='MEMO (MEMO is required, or you will lose your coins)', value=obj.memo, inline=False)
+    # embed.set_image(url=f"https://chart.googleapis.com/chart?chs=150x150&cht=qr&chl={qr_data}")
+    # embed.set_footer(text="Or, scan the QR code using Keysign Mobile App.")
 
     await ctx.send(embed=embed, hidden=True, components=[create_actionrow(create_button(custom_id="chain-scan", style=ButtonStyle.green, label="Sent? Scan Chain"))])
 
@@ -640,7 +645,7 @@ async def tournament_reward(ctx, tournament_id: str, user: discord.Member):
             winner.balance += tournament.amount * TOURNAMENT_FEE_MULTIPLICATION
             winner.save()
 
-            MaakayUser.objects.filter(user=winner).update(total_won_in_tournaments=F('total_won_in_tournaments') + tournament.amount - settings.TOURNAMENT_FEE,
+            MaakayUser.objects.filter(user=winner).update(total_won_in_tournaments=F('total_won_in_tournaments') + tournament.amount * TOURNAMENT_FEE_MULTIPLICATION,
                                                           total_tournaments_won=F('total_tournaments_won') + 1)
 
             winner = await client.fetch_user(user.id)
