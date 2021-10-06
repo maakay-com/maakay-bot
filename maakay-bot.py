@@ -5,7 +5,6 @@ import discord
 from asgiref.sync import sync_to_async
 from discord_slash import SlashCommand
 from discord_slash.context import ComponentContext
-from discord_slash.utils.manage_commands import create_choice, create_option
 from discord_slash.utils.manage_components import create_button, create_actionrow
 from discord_slash.model import ButtonStyle
 from discord.ext import commands
@@ -18,15 +17,8 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 from django.conf import settings
-from django.db.models import Q, F
-
-from core.models.users import User, UserTransactionHistory
 from core.utils.scan_chain import match_transaction, check_confirmation, scan_chain
-
-from maakay.models.users import UserTip, MaakayUser
 from maakay.models.challenges import Challenge
-from maakay.models.tournaments import Tournament
-from maakay.shortcuts import convert_to_decimal
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
