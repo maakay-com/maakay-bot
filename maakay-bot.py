@@ -1,6 +1,6 @@
+from itertools import combinations_with_replacement
 import os
 from discord.colour import Color
-import humanize
 import django
 import discord
 from asgiref.sync import sync_to_async
@@ -9,6 +9,7 @@ from discord_slash.context import ComponentContext
 from discord_slash.utils.manage_commands import create_option
 from discord_slash.utils.manage_components import create_button, create_actionrow
 from discord_slash.model import ButtonStyle
+from discord.ext import commands
 
 
 # Django Setup on bot
@@ -19,11 +20,10 @@ django.setup()
 
 from django.conf import settings
 from django.db.models import Q, F
-from core.models.transactions import Transaction
-from core.models.statistics import Statistic
+
 from core.models.users import User, UserTransactionHistory
 from core.utils.scan_chain import match_transaction, check_confirmation, scan_chain
-from core.utils.send_tnbc import estimate_fee, withdraw_tnbc
+
 from maakay.models.users import UserTip, MaakayUser
 from maakay.models.challenges import Challenge
 from maakay.models.tournaments import Tournament
@@ -31,23 +31,21 @@ from maakay.shortcuts import convert_to_decimal
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
-
-CHALLENGE_FEE_MULTIPLICATION = (100 - settings.CHALLENGE_FEE) / 100
 TOURNAMENT_FEE_MULTIPLICATION = (100 - settings.TOURNAMENT_FEE) / 100
 
 # Initialize the Slash commands
-client = discord.Client(intents=discord.Intents.all())
-slash = SlashCommand(client, sync_commands=True)
+bot = commands.Bot(command_prefix="/")
+slash = SlashCommand(bot, sync_commands=True)
 
 
-@client.event
+@bot.event
 async def on_ready():
     print("------------------------------------")
     print("maakay Bot Running:")
     print("------------------------------------")
-    await client.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="/help"))
+    await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="/help"))
 
-
+    
 @slash.slash(name="balance", description="Check User Balance.")
 async def user_balance(ctx):
 
@@ -721,7 +719,7 @@ async def help_(ctx):
 
     embed = discord.Embed(title="Commands", color=Color.orange())
     embed.set_footer(text="Fields with * are required!!")
-    embed.set_thumbnail(url=client.user.avatar_url)
+    embed.set_thumbnail(url=bot.user.avatar_url)
 
     embed.add_field(name="/balance", value="Check your balance.", inline=False)
     embed.add_field(name="/deposit tnbc", value="Deposit TNBC into your maakay account.", inline=False)
@@ -742,8 +740,12 @@ async def help_(ctx):
 
     await ctx.send(embed=embed, hidden=True)
 
+for filename in os.listdir('./cogs'):
+    if filename.endswith('.py'):
+        bot.load_extension(f'cogs.{filename[:-3]}')
 
-@client.event
+
+@bot.event
 async def on_component(ctx: ComponentContext):
 
     button = ctx.custom_id.split('_')
@@ -764,9 +766,9 @@ async def on_component(ctx: ComponentContext):
 
             challenge = await sync_to_async(Challenge.objects.get)(uuid=challenge_uuid)
 
-            challenger = await client.fetch_user(int(challenge.challenger.discord_id))
-            contender = await client.fetch_user(int(challenge.contender.discord_id))
-            referee = await client.fetch_user(int(challenge.referee.discord_id))
+            challenger = await bot.fetch_user(int(challenge.challenger.discord_id))
+            contender = await bot.fetch_user(int(challenge.contender.discord_id))
+            referee = await bot.fetch_user(int(challenge.referee.discord_id))
 
             if challenge.contender == obj:
                 if challenge.contender_status == Challenge.PENDING:
@@ -867,8 +869,8 @@ async def kill(ctx):
     if int(ctx.author.id) == int(settings.BOT_MANAGER_ID):
         print("Shutting Down the bot")
         await ctx.send("Bot Shut Down", hidden=True)
-        await client.close()
+        await bot.close()
     else:
         await ctx.send("#DonotKillMaakayBot", hidden=True)
 
-client.run(TOKEN)
+bot.run(TOKEN)
