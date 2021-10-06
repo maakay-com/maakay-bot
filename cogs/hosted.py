@@ -150,8 +150,8 @@ class hosted_challenge(commands.Cog):
                 winner.balance += tournament.amount * TOURNAMENT_FEE_MULTIPLICATION
                 winner.save()
 
-                MaakayUser.objects.filter(user=winner).update(total_won_in_tournaments=F('total_won_in_tournaments') + tournament.amount - settings.TOURNAMENT_FEE,
-                                                            total_tournaments_won=F('total_tournaments_won') + 1)
+                MaakayUser.objects.filter(user=winner).update(total_won_in_tournaments=F('total_won_in_tournaments') + tournament.amount * TOURNAMENT_FEE_MULTIPLICATION,
+                                                          total_tournaments_won=F('total_tournaments_won') + 1)
 
                 winner = await self.bot.fetch_user(user.id)
                 hosted_by = await self.bot.fetch_user(ctx.author.id)
