@@ -5,6 +5,8 @@ Clone the repo.
 
 Activate the virtual environment.
 
+Install all the requirements using `pip install -r requirements.txt`
+
 Set the required environment variables.
 ```shell
 DJANGO_SETTINGS_MODULE  # config.settings.development
@@ -12,7 +14,10 @@ MAAKAY_PAYMENT_ACCOUNT_NUMBER  # TNBC Account number that'll be used to receive 
 SIGNING_KEY  # Signing key of TNBC account that'll be used to transfer TNBC (suggested to use same set of account number and signing key)
 BOT_MANAGER_ID  # Discord ID of the user who can use /kill command
 MAAKAY_DISCORD_TOKEN  # Discord Token of the bot
-SECRET_KEY  # Django Secret Key
+SECRET_KEY  # Django Secret Key (Just a random string)
+TOURNAMENT_CHANNEL_ID  # Discord Channel ID of tournament channel
+CHECK_TNBC_CONFIRMATION  # Flag to check or not to check confirmations (True/ False)
+BANK_IP  # TNBC Bank IP we're connecting to.
 ```
 
 Navigate to API and create required database and super user.
@@ -24,8 +29,6 @@ python manage.py createsuperuser
 Run the bot using the command `python maakay-bot.py`.
 
 To run django server, navigate to API directory and use command `python manage.py runserver`.
-
-Discord Bot guide coming soon.
 
 #### Commands
 `/balance`: Check your tnbc balance.
@@ -52,8 +55,10 @@ Discord Bot guide coming soon.
 
 `/challenge history`: List your challenge history.
 
-`/tournament new <title> <description> <amount> <url (optional)>`: Start a new tournament with big prizes.
+`/host challenge <title> <description> <amount> <url (optional)>`: Host a new challenge with big prizes.
 
-`/tournament reward <tournament_id> <winner>`: Reward the winner of the tournament.
+`/host reward <challenge_id> <winner>`: Reward the winner of the challenge.
 
-`/tournament history`: View your tournament history.
+`/hosted history`: View your hosted challenge history.
+
+`/hosted all`: View your active hosted challenges.
