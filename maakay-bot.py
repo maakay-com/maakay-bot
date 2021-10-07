@@ -8,7 +8,6 @@ from discord_slash.context import ComponentContext
 from discord_slash.utils.manage_components import create_button, create_actionrow
 from discord_slash.model import ButtonStyle
 from discord.ext import commands
-from core.models.users import User
 
 
 # Django Setup on bot
@@ -18,6 +17,7 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 from django.conf import settings
+from core.models.users import User
 from core.utils.scan_chain import match_transaction, check_confirmation, scan_chain
 from maakay.models.challenges import Challenge
 
