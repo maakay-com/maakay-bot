@@ -221,7 +221,7 @@ async def on_component(ctx: ComponentContext):
 
         scan_chain()
 
-        if os.environ['CHECK_TNBC_CONFIRMATION'] is True:
+        if os.environ['CHECK_TNBC_CONFIRMATION'] == 'True':
             check_confirmation()
 
         match_transaction()
