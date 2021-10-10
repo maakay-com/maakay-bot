@@ -10,6 +10,7 @@ from discord_slash.model import ButtonStyle
 from discord.ext import commands
 
 
+
 # Django Setup on bot
 DJANGO_DIRECTORY = os.getcwd()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", os.environ["DJANGO_SETTINGS_MODULE"])
@@ -17,9 +18,9 @@ os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
 django.setup()
 
 from django.conf import settings
-from core.models.users import User
 from core.utils.scan_chain import match_transaction, check_confirmation, scan_chain
 from maakay.models.challenges import Challenge
+from core.models.users import User
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
@@ -58,6 +59,7 @@ async def help_all(ctx):
     embed.add_field(name="/challenge reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!", inline=False)
     embed.add_field(name="/challenge history", value="Show the history of challenges in which the user participated!!", inline=False)
     embed.add_field(name="/challenge all", value="List all the active challenges!!", inline=False)
+    embed.add_field(name="/challenge cancel `<challenge id>*`", value="Cancel a challenge (only if referee hasn't accepted it yet)", inline=False)
     embed.add_field(name="/host challenge `<title>*` `<description>*` `<amount>*` `<url for more info>*`", value="Host a new challenge!!", inline=False)
     embed.add_field(name="/host reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!!", inline=False)
     embed.add_field(name="/hosted history", value="List of hosted challenges you participated in!!", inline=False)
@@ -101,6 +103,7 @@ async def help_all(ctx):
     embed.add_field(name="/challenge reward `<challenge id>*` `<challenge winner>*`", value="Reward the challenge winner!", inline=False)
     embed.add_field(name="/challenge history", value="Show the history of challenges in which the user participated!!", inline=False)
     embed.add_field(name="/challenge all", value="List all the active challenges!!", inline=False)
+    embed.add_field(name="/challenge cancel `<challenge id>*`", value="Cancel a challenge (only if referee hasn't accepted it yet)", inline=False)
 
     await ctx.send(embed=embed, hidden=True)
 
@@ -128,6 +131,7 @@ async def on_component(ctx: ComponentContext):
 
     button = ctx.custom_id.split('_')
 
+
     button_type = button[0]
 
     if button_type == "challenge":
@@ -153,10 +157,10 @@ async def on_component(ctx: ComponentContext):
                     if button_action == "accept":
                         if obj.get_available_balance() >= challenge.amount:
                             if challenge.referee_status == Challenge.ACCEPTED:
-                                challenge.contender.locked += challenge.amount
-                                challenge.contender.save()
                                 challenge.status = Challenge.ONGOING
                             challenge.contender_status = Challenge.ACCEPTED
+                            challenge.contender.locked += challenge.amount
+                            challenge.contender.save()
                             challenge.save()
                             embed.add_field(name="Accepted", value=f"Challenge accepted by contender {contender.mention}", inline=False)
                             embed.add_field(name="Title", value=challenge.title)
