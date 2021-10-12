@@ -28,6 +28,7 @@ TOURNAMENT_FEE_MULTIPLICATION = (100 - settings.TOURNAMENT_FEE) / 100
 
 # Initialize the Slash commands
 bot = commands.Bot(command_prefix=">")
+bot.remove_command('help')
 slash = SlashCommand(bot, sync_commands=True)
 
 
