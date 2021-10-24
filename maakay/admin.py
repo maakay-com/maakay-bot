@@ -1,10 +1,10 @@
 from django.contrib import admin
 
-from .models.challenges import Challenge
-from .models.tournaments import Tournament
-from .models.users import MaakayUser
+from .models.challenge import Challenge
+from .models.tournament import Tournament
+from .models.profile import UserProfile
 
 
 admin.site.register(Challenge)
-admin.site.register(MaakayUser)
+admin.site.register(UserProfile)
 admin.site.register(Tournament)

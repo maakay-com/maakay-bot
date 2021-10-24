@@ -3,7 +3,7 @@ import uuid
 from django.db import models
 from django.conf import settings
 
-from .users import User
+from core.models.user import User
 
 
 class Challenge(models.Model):

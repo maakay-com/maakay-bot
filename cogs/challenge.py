@@ -1,8 +1,6 @@
 from discord.ext import commands
-import sys
-sys.path.append("..")
-from discord_slash import SlashContext, cog_ext
-from core.models.users import User
+from discord_slash import cog_ext
+from core.models.user import User
 from discord import Color
 import discord
 from asgiref.sync import sync_to_async
@@ -10,48 +8,47 @@ from discord_slash.utils.manage_components import create_button, create_actionro
 from django.conf import settings
 from discord_slash.model import ButtonStyle
 from discord_slash.utils.manage_commands import create_option
-from maakay.models.users import MaakayUser
+from maakay.models.profile import UserProfile
 from maakay.shortcuts import convert_to_decimal
 from django.db.models import Q, F
-from maakay.models.challenges import Challenge
+from maakay.models.challenge import Challenge
 
 CHALLENGE_FEE_MULTIPLICATION = (100 - settings.CHALLENGE_FEE) / 100
+
 
 class challenge(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-
     @cog_ext.cog_subcommand(base="challenge", name="new", description="Create a new challenge!!",
-                  options=[
-                      create_option(
-                          name="title",
-                          description="The title of the challenge.",
-                          option_type=3,
-                          required=True
-                      ),
-                      create_option(
-                          name="amount",
-                          description="Enter TNBC amount you want to escrow.",
-                          option_type=10,
-                          required=True
-                      ),
-                      create_option(
-                          name="contender",
-                          description="Enter your escrow partner.",
-                          option_type=6,
-                          required=True
-                      ),
-                      create_option(
-                          name="referee",
-                          description="Enter your escrow partner.",
-                          option_type=6,
-                          required=True
-                      )
-                  ]
-                  )
+                            options=[
+                                create_option(
+                                    name="title",
+                                    description="The title of the challenge.",
+                                    option_type=3,
+                                    required=True
+                                ),
+                                create_option(
+                                    name="amount",
+                                    description="Enter TNBC amount you want to escrow.",
+                                    option_type=10,
+                                    required=True
+                                ),
+                                create_option(
+                                    name="contender",
+                                    description="Enter your escrow partner.",
+                                    option_type=6,
+                                    required=True
+                                ),
+                                create_option(
+                                    name="referee",
+                                    description="Enter your escrow partner.",
+                                    option_type=6,
+                                    required=True
+                                )
+                            ]
+                            )
     async def challenge_new(self, ctx, title: str, amount: float, contender: discord.Member, referee: discord.Member):
-
 
         challenger_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
         contender_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(contender.id))
@@ -67,7 +64,7 @@ class challenge(commands.Cog):
                 if contender_user.get_available_balance() >= total_amount:
                     if challenger_user.get_available_balance() >= total_amount:
                         challenger_user.locked += total_amount
-                        challenger_user.save()                    
+                        challenger_user.save()
                         embed.add_field(name='Challenge Invitation', value=f"{contender.mention}, {ctx.author.mention} invited you on *{title}* for **{amount} TNBC**.", inline=False)
                         embed.add_field(name='Referee Invitation', value=f"{referee.mention}, {ctx.author.mention} invited you to be referee of *{title}*.")
                         challenge = await sync_to_async(Challenge.objects.create)(challenger=challenger_user, contender=contender_user, referee=referee_user, title=title, amount=total_amount)
@@ -87,21 +84,21 @@ class challenge(commands.Cog):
             await ctx.send(embed=embed, hidden=True)
 
     @cog_ext.cog_subcommand(base="challenge", name="reward", description="Reward the challenge winner!!",
-                  options=[
-                      create_option(
-                          name="challenge_id",
-                          description="ID of challenge.",
-                          option_type=3,
-                          required=True
-                      ),
-                      create_option(
-                          name="user",
-                          description="Challenge winnner.",
-                          option_type=6,
-                          required=True
-                      )
-                  ]
-                  )
+                            options=[
+                                create_option(
+                                    name="challenge_id",
+                                    description="ID of challenge.",
+                                    option_type=3,
+                                    required=True
+                                ),
+                                create_option(
+                                    name="user",
+                                    description="Challenge winnner.",
+                                    option_type=6,
+                                    required=True
+                                )
+                            ]
+                            )
     async def challenge_reward(self, ctx, challenge_id: str, user: discord.Member):
 
         referee, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
@@ -136,9 +133,9 @@ class challenge(commands.Cog):
                 winner.balance += challenge.amount * CHALLENGE_FEE_MULTIPLICATION
                 winner.locked -= challenge.amount
                 winner.save()
-                MaakayUser.objects.filter(user=winner).update(total_won_in_challenges=F('total_won_in_challenges') + challenge.amount - settings.CHALLENGE_FEE,
-                                                            total_challenges_won=F('total_challenges_won') + 1)
-                MaakayUser.objects.filter(user=referee).update(total_referred=F('total_referred') + 1)
+                UserProfile.objects.filter(user=winner).update(total_won_in_challenges=F('total_won_in_challenges') + challenge.amount - settings.CHALLENGE_FEE,
+                                                               total_challenges_won=F('total_challenges_won') + 1)
+                UserProfile.objects.filter(user=referee).update(total_referred=F('total_referred') + 1)
 
                 embed.add_field(name="Yaayy", value=f"{user.mention} is rewarded **{convert_to_decimal(challenge.amount - settings.CHALLENGE_FEE)}** TNBC for *{challenge.title}*.")
                 embed.set_image(url="https://i.ibb.co/y8QBmQc/download.png")
@@ -152,12 +149,11 @@ class challenge(commands.Cog):
             embed.add_field(name="Error!", value="You're not a referee of this challenge.")
             await ctx.send(embed=embed, hidden=True)
 
-
     @cog_ext.cog_subcommand(base="challenge", name="cancel", options=[create_option(name="challenge_id", description="Id of the Challenge", option_type=3, required=True)])
     async def challenge_cancel(self, ctx, challenge_id):
-    
+
         obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
-        embed = discord.Embed(title="Cancel Challenge", color = Color.orange())
+        embed = discord.Embed(title="Cancel Challenge", color=Color.orange())
         if Challenge.objects.filter(Q(challenger=obj) | Q(contender=obj), Q(uuid_hex=challenge_id)).exists():
             challenge = await sync_to_async(Challenge.objects.get)(uuid_hex=challenge_id)
             if challenge.status == Challenge.NEW:
@@ -165,7 +161,7 @@ class challenge(commands.Cog):
                 if challenge.contender_status == Challenge.ACCEPTED:
                     challenge.contender.locked -= challenge.amount
                     challenge.contender.save()
-                
+
                 challenge.challenger.locked -= challenge.amount
                 challenge.challenger.save()
 
@@ -180,8 +176,7 @@ class challenge(commands.Cog):
                 await ctx.send(embed=embed)
         else:
             embed.add_field(name="Error!", value="You don't have the permission to cancel this challenge.")
-            await ctx.send(embed=embed)           
-
+            await ctx.send(embed=embed)
 
     @cog_ext.cog_subcommand(base="challenge", name="history", description="Show the history of challenges in which the user was included.")
     async def challenge_history(self, ctx):
@@ -205,9 +200,8 @@ class challenge(commands.Cog):
         else:
             embed = discord.Embed(title="404!", description="You have not participated in any challenge.", color=Color.orange())
 
-        await ctx.send(embed=embed, hidden=True)    
+        await ctx.send(embed=embed, hidden=True)
 
-    
     @cog_ext.cog_subcommand(base="challenge", name="all", description="list all the active challenges!!")
     async def challenge_all(self, ctx):
 
@@ -234,8 +228,6 @@ class challenge(commands.Cog):
             embed.add_field(name="404!", value="You have no ongoing challenges available.")
 
         await ctx.send(embed=embed, hidden=True)
-
-
 
 
 def setup(bot):

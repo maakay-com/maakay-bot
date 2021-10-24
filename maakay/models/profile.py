@@ -3,10 +3,10 @@ from uuid import uuid4
 from django.db import models
 from django.conf import settings
 
-from core.models.users import User
+from core.models.user import User
 
 
-class MaakayUser(models.Model):
+class UserProfile(models.Model):
 
     uuid = models.UUIDField(default=uuid4, editable=False, primary_key=True)
 

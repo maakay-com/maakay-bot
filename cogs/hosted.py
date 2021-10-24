@@ -1,70 +1,69 @@
 from discord.ext import commands
-import sys
-sys.path.append("..")
-from discord_slash import SlashContext, cog_ext
-from core.models.users import User
+from discord_slash import cog_ext
+from core.models.user import User
 from discord import Color
 import discord
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from discord_slash.utils.manage_commands import create_option
-from maakay.models.users import  MaakayUser
+from maakay.models.profile import UserProfile
 from maakay.shortcuts import convert_to_decimal
 from django.db.models import Q, F
-from maakay.models.tournaments import Tournament
+from maakay.models.tournament import Tournament
 
 TOURNAMENT_FEE_MULTIPLICATION = (100 - settings.TOURNAMENT_FEE) / 100
+
 
 class hosted_challenge(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @cog_ext.cog_subcommand(base="host", name="challenge", description="Host challenge between users!!",
-                  options=[
-                      create_option(
-                          name="title",
-                          description="The title of the hosted challenge.",
-                          option_type=3,
-                          required=True
-                      ),
-                      create_option(
-                          name="description",
-                          description="More info about the hosted challenge.",
-                          option_type=3,
-                          required=True
-                      ),
-                      create_option(
-                          name="amount",
-                          description="Enter TNBC amount you want to escrow.",
-                          option_type=10,
-                          required=True
-                      ),
-                      create_option(
-                          name="player1",
-                          description="User that'll be participant.",
-                          option_type=6,
-                          required=True
-                      ),
-                      create_option(
-                          name="player2",
-                          description="User that'll be participant.",
-                          option_type=6,
-                          required=True
-                      ),
-                      create_option(
-                          name="player3",
-                          description="User that'll be participant.",
-                          option_type=6,
-                          required=False
-                      ),
-                      create_option(
-                          name="player4",
-                          description="User that'll be participant.",
-                          option_type=6,
-                          required=False
-                      )
-                  ]
-                  )
+                            options=[
+                                create_option(
+                                    name="title",
+                                    description="The title of the hosted challenge.",
+                                    option_type=3,
+                                    required=True
+                                ),
+                                create_option(
+                                    name="description",
+                                    description="More info about the hosted challenge.",
+                                    option_type=3,
+                                    required=True
+                                ),
+                                create_option(
+                                    name="amount",
+                                    description="Enter TNBC amount you want to escrow.",
+                                    option_type=10,
+                                    required=True
+                                ),
+                                create_option(
+                                    name="player1",
+                                    description="User that'll be participant.",
+                                    option_type=6,
+                                    required=True
+                                ),
+                                create_option(
+                                    name="player2",
+                                    description="User that'll be participant.",
+                                    option_type=6,
+                                    required=True
+                                ),
+                                create_option(
+                                    name="player3",
+                                    description="User that'll be participant.",
+                                    option_type=6,
+                                    required=False
+                                ),
+                                create_option(
+                                    name="player4",
+                                    description="User that'll be participant.",
+                                    option_type=6,
+                                    required=False
+                                )
+                            ]
+                            )
     async def tournament_new(self, ctx, title: str, description: str, amount: float, player1: discord.Member, player2: discord.Member, player3: discord.Member = None, player4: discord.Member = None):
 
         await ctx.defer(hidden=True)
@@ -75,12 +74,12 @@ class hosted_challenge(commands.Cog):
 
         if total_amount < settings.MINIMUM_TOURNAMENT_AMOUNT:
             embed = discord.Embed(title="Sorry",
-                                description=f"You cannot host challenges less than {convert_to_decimal(settings.MINIMUM_TOURNAMENT_AMOUNT)} TNBC.", color=Color.orange())
+                                  description=f"You cannot host challenges less than {convert_to_decimal(settings.MINIMUM_TOURNAMENT_AMOUNT)} TNBC.", color=Color.orange())
             await ctx.send(embed=embed, hidden=True)
         else:
             if discord_user.get_available_balance() < total_amount:
                 embed = discord.Embed(title="Sorry",
-                                    description="You do not have enough maakay balance avalable.\nUse `/deposit tnbc` command to deposit TNBC.", color=Color.orange())
+                                      description="You do not have enough maakay balance avalable.\nUse `/deposit tnbc` command to deposit TNBC.", color=Color.orange())
                 await ctx.send(embed=embed, hidden=True)
             else:
 
@@ -103,31 +102,30 @@ class hosted_challenge(commands.Cog):
                 await tournament_channel.send(message, embed=tournament_embed)
 
                 Tournament.objects.create(title=title, description=description, amount=total_amount, hosted_by=discord_user)
-                MaakayUser.objects.filter(user=discord_user).update(total_amount_hosted=F('total_amount_hosted') + total_amount,
-                                                                    total_challenges_hosted=F('total_challenges_hosted') + 1)
+                UserProfile.objects.filter(user=discord_user).update(total_amount_hosted=F('total_amount_hosted') + total_amount,
+                                                                     total_challenges_hosted=F('total_challenges_hosted') + 1)
 
                 discord_user.locked += total_amount
                 discord_user.save()
 
                 await ctx.send("Challenge Hosted successfully.", hidden=True)
 
-
     @cog_ext.cog_subcommand(base="host", name="reward", description="Reward the challenge winner!!",
-                  options=[
-                      create_option(
-                          name="tournament_id",
-                          description="ID of challenge.",
-                          option_type=3,
-                          required=True
-                      ),
-                      create_option(
-                          name="user",
-                          description="Challenge winnner.",
-                          option_type=6,
-                          required=True
-                      )
-                  ]
-                  )
+                            options=[
+                                create_option(
+                                    name="tournament_id",
+                                    description="ID of challenge.",
+                                    option_type=3,
+                                    required=True
+                                ),
+                                create_option(
+                                    name="user",
+                                    description="Challenge winnner.",
+                                    option_type=6,
+                                    required=True
+                                )
+                            ]
+                            )
     async def tournament_reward(self, ctx, tournament_id: str, user: discord.Member):
 
         discord_user, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
@@ -150,8 +148,8 @@ class hosted_challenge(commands.Cog):
                 winner.balance += tournament.amount * TOURNAMENT_FEE_MULTIPLICATION
                 winner.save()
 
-                MaakayUser.objects.filter(user=winner).update(total_won_in_tournaments=F('total_won_in_tournaments') + tournament.amount * TOURNAMENT_FEE_MULTIPLICATION,
-                                                          total_tournaments_won=F('total_tournaments_won') + 1)
+                UserProfile.objects.filter(user=winner).update(total_won_in_tournaments=F('total_won_in_tournaments') + tournament.amount * TOURNAMENT_FEE_MULTIPLICATION,
+                                                               total_tournaments_won=F('total_tournaments_won') + 1)
 
                 winner = await self.bot.fetch_user(user.id)
                 hosted_by = await self.bot.fetch_user(ctx.author.id)
@@ -217,7 +215,6 @@ class hosted_challenge(commands.Cog):
             embed.add_field(name='404!', value="You have not hosted/ participated in hosted challenges.")
 
         await ctx.send(embed=embed, hidden=True)
-
 
 
 def setup(bot):

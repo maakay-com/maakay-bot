@@ -1,43 +1,42 @@
 from discord.ext import commands
-import sys
-sys.path.append("..")
 from discord_slash import cog_ext
-from core.models.users import User
+from core.models.user import User
 from discord import Color
 import discord
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from discord_slash.utils.manage_commands import create_option
-from maakay.models.users import UserTip, MaakayUser
+from maakay.models.profile import UserTip, UserProfile
 from maakay.shortcuts import convert_to_decimal
 from django.db.models import Q
+
 
 class tip(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
     @cog_ext.cog_subcommand(base="tip", name="tnbc", description="Tip another user!!",
-                  options=[
-                      create_option(
-                          name="user",
-                          description="Enter your escrow partner.",
-                          option_type=6,
-                          required=True
-                      ),
-                      create_option(
-                          name="amount",
-                          description="Enter TNBC amount you want to escrow.",
-                          option_type=10,
-                          required=True
-                      ),
-                      create_option(
-                          name="message",
-                          description="Message for the tip.",
-                          option_type=3,
-                          required=False
-                      )
-                  ]
-                  )
+                            options=[
+                                create_option(
+                                    name="user",
+                                    description="Enter your escrow partner.",
+                                    option_type=6,
+                                    required=True
+                                ),
+                                create_option(
+                                    name="amount",
+                                    description="Enter TNBC amount you want to escrow.",
+                                    option_type=10,
+                                    required=True
+                                ),
+                                create_option(
+                                    name="message",
+                                    description="Message for the tip.",
+                                    option_type=3,
+                                    required=False
+                                )
+                            ]
+                            )
     async def tip_new(self, ctx, user: discord.Member, amount: float, message: str = None):
 
         sender, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
@@ -57,7 +56,7 @@ class tip(commands.Cog):
                     available_balace_including_fee = sender.get_available_balance() - settings.TIP_FEE
                     decimal_available_balace_including_fee = convert_to_decimal(available_balace_including_fee)
                     embed = discord.Embed(title="Inadequate Funds!!",
-                                        description=f"You only have {decimal_available_balace_including_fee} tippable TNBC available. \n Use `/deposit tnbc` to deposit TNBC!!", color=Color.orange())
+                                          description=f"You only have {decimal_available_balace_including_fee} tippable TNBC available. \n Use `/deposit tnbc` to deposit TNBC!!", color=Color.orange())
                     await ctx.send(embed=embed, hidden=True)
 
                 else:
@@ -70,8 +69,8 @@ class tip(commands.Cog):
                     recepient.save()
                     UserTip.objects.create(sender=sender, recepient=recepient, amount=total_amount, title=message)
 
-                    sender_profile = MaakayUser.objects.get_or_create(user=sender)
-                    recepient_profile = MaakayUser.objects.get_or_create(user=recepient)
+                    sender_profile = UserProfile.objects.get_or_create(user=sender)
+                    recepient_profile = UserProfile.objects.get_or_create(user=recepient)
                     sender_profile[0].total_tip_sent += total_amount_including_fees
                     sender_profile[0].save()
                     recepient_profile[0].total_tip_received += total_amount
@@ -113,7 +112,6 @@ class tip(commands.Cog):
             embed = discord.Embed(title="Error!!", description="404 Not Found.", color=Color.orange())
 
         await ctx.send(embed=embed, hidden=True)
-
 
 
 def setup(bot):

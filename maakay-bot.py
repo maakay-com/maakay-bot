@@ -10,7 +10,6 @@ from discord_slash.model import ButtonStyle
 from discord.ext import commands
 
 
-
 # Django Setup on bot
 DJANGO_DIRECTORY = os.getcwd()
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", os.environ["DJANGO_SETTINGS_MODULE"])
@@ -19,8 +18,8 @@ django.setup()
 
 from django.conf import settings
 from core.utils.scan_chain import match_transaction, check_confirmation, scan_chain
-from maakay.models.challenges import Challenge
-from core.models.users import User
+from maakay.models.challenge import Challenge
+from core.models.user import User
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
@@ -32,14 +31,12 @@ bot.remove_command('help')
 slash = SlashCommand(bot, sync_commands=True)
 
 
-
 @bot.event
 async def on_ready():
     print("------------------------------------")
     print("maakay Bot Running:")
     print("------------------------------------")
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="/help"))
-
 
 
 @slash.subcommand(base="help", name="all", description="List of Commands!!")
@@ -67,6 +64,7 @@ async def help_all(ctx):
     embed.add_field(name="/hosted all", value="List of active hosted challenges!!", inline=False)
     await ctx.send(embed=embed, hidden=True)
 
+
 @slash.subcommand(base="help", name="general", description="List of Commands from General Category")
 async def help_general(ctx):
     embed = discord.Embed(title="General Commands", color=Color.orange())
@@ -82,8 +80,9 @@ async def help_general(ctx):
 
     await ctx.send(embed=embed, hidden=True)
 
+
 @slash.subcommand(base="help", name="tip", description="List of Commands from Tip Category")
-async def help_all(ctx):
+async def help_tip(ctx):
     embed = discord.Embed(title="Tip Commands", color=Color.orange())
     embed.set_footer(text="Fields with * are required!!")
     embed.set_thumbnail(url=bot.user.avatar_url)
@@ -95,7 +94,7 @@ async def help_all(ctx):
 
 
 @slash.subcommand(base="help", name="challenge", description="List of Commands from Challenge Category")
-async def help_all(ctx):
+async def help_challenge(ctx):
     embed = discord.Embed(title="Challenge Commands", color=Color.orange())
     embed.set_footer(text="Fields with * are required!!")
     embed.set_thumbnail(url=bot.user.avatar_url)
@@ -108,8 +107,9 @@ async def help_all(ctx):
 
     await ctx.send(embed=embed, hidden=True)
 
+
 @slash.subcommand(base="help", name="hosted_challenge", description="List of Commands from Hosted Challenge Category")
-async def help_all(ctx):
+async def help_hosted_challenge(ctx):
     embed = discord.Embed(title="Hosted Challenge Commands", color=Color.orange())
     embed.set_footer(text="Fields with * are required!!")
     embed.set_thumbnail(url=bot.user.avatar_url)
@@ -131,7 +131,6 @@ for filename in os.listdir('./cogs'):
 async def on_component(ctx: ComponentContext):
 
     button = ctx.custom_id.split('_')
-
 
     button_type = button[0]
 

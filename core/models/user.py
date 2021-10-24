@@ -3,7 +3,7 @@ import random
 from django.conf import settings
 
 from django.db import models
-from ..models.transactions import Transaction
+from ..models.transaction import Transaction
 
 
 class User(models.Model):

@@ -6,9 +6,9 @@ from django.utils import timezone
 from django.conf import settings
 
 from ..models.scan_tracker import ScanTracker
-from ..models.transactions import Transaction
-from ..models.statistics import Statistic
-from ..models.users import User, UserTransactionHistory
+from ..models.transaction import Transaction
+from ..models.statistic import Statistic
+from ..models.user import User, UserTransactionHistory
 
 TNBC_TRANSACTION_SCAN_URL = f"http://{settings.BANK_IP}/bank_transactions?account_number={settings.MAAKAY_PAYMENT_ACCOUNT_NUMBER}&block__sender=&fee=&recipient="
 

@@ -1,10 +1,10 @@
 from django.contrib import admin
 
-from .models.transactions import Transaction
-from .models.users import User, UserTransactionHistory
+from .models.transaction import Transaction
+from .models.user import User, UserTransactionHistory
 from .models.scan_tracker import ScanTracker
-from .models.statistics import Statistic
-from .models.guilds import Guild
+from .models.statistic import Statistic
+from .models.guild import Guild
 
 
 # Register your models here.
