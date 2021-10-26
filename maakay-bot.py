@@ -8,6 +8,7 @@ from discord_slash.context import ComponentContext
 from discord_slash.utils.manage_components import create_button, create_actionrow
 from discord_slash.model import ButtonStyle
 from discord.ext import commands
+from discord_slash.utils.manage_commands import create_option, create_choice
 
 
 # Django Setup on bot
@@ -30,6 +31,15 @@ bot = commands.Bot(command_prefix=">")
 bot.remove_command('help')
 slash = SlashCommand(bot, sync_commands=True)
 
+gifs = {
+    "new_challenge": "https://media.giphy.com/media/NEm5Alpm2Lnkt7rWGD/giphy.gif",
+    "reward_challenge": "https://media.giphy.com/media/GtemRFOnKXsZLlRrC7/giphy.gif",
+    "new_hosted_challenge": "https://media.giphy.com/media/iRd2acSIYlV3wWSqls/giphy.gif",
+    "reward_hosted_challenge": "https://media.giphy.com/media/ez06jglQfHaXxhYDxg/giphy.gif",
+    "set_withdraw_address": "https://media.giphy.com/media/NmHoXuxvzwTuTA7mGb/giphy.gif",
+    "deposit": "https://media.giphy.com/media/3SKSF94UXNnJ3fFSoA/giphy.gif",
+    "balance": "https://media.giphy.com/media/uJBfvosVp38Ws2VpDh/giphy.gif"
+}
 
 @bot.event
 async def on_ready():
@@ -107,7 +117,6 @@ async def help_challenge(ctx):
 
     await ctx.send(embed=embed, hidden=True)
 
-
 @slash.subcommand(base="help", name="hosted_challenge", description="List of Commands from Hosted Challenge Category")
 async def help_hosted_challenge(ctx):
     embed = discord.Embed(title="Hosted Challenge Commands", color=Color.orange())
@@ -120,6 +129,21 @@ async def help_hosted_challenge(ctx):
     embed.add_field(name="/hosted all", value="List of active hosted challenges!!", inline=False)
 
     await ctx.send(embed=embed, hidden=True)
+
+@slash.subcommand(base="help", name="gif", description="Show gif for usage of a  specific command", options=[
+    create_option(name="command_name", description="Command which you wanna see gif of", option_type=3, required=True, choices=[
+        create_choice(name="Create Challenge", value="new_challenge"),
+        create_choice(name="Reward Challenge", value="reward_challenge"),
+        create_choice(name="Deposit TNBC", value="deposit"),
+        create_choice(name="Check Balance", value="balance"),
+        create_choice(name="Host a challenge", value="new_hosted_challenge"),
+        create_choice(name="Reward a hosted challenge", value="reward_hosted_challenge"),
+        create_choice(name="Set withdraw address", value="set_withdraw_address"),
+        ])
+    ])
+
+async def help_gif(ctx, command_name):
+    await ctx.send(gifs[command_name], hidden=True)
 
 
 for filename in os.listdir('./cogs'):
