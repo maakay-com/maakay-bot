@@ -4,7 +4,7 @@
 <p>
 <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green"> <img src="https://img.shields.io/badge/DJANGO-REST-ff1709?style=for-the-badge&logo=django&logoColor=white&color=ff1709&labelColor=gray"> <img src="https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white">
 </p>
-<h3>Tip friends, create challenges or take part in tournament</h3> 
+<h3>Tip friends and create/ host challenges</h3> 
 
 <h4> About Maakay bot</h4>
 
@@ -30,7 +30,7 @@ CHECK_TNBC_CONFIRMATION  # Flag to check or not to check confirmations (True/ Fa
 BANK_IP  # TNBC Bank IP we're connecting to.
 ```
 
-Navigate to API and create required database and super user.
+Create required database and super user.
 ```shell
 python manage.py migrate
 python manage.py createsuperuser
@@ -38,7 +38,7 @@ python manage.py createsuperuser
 
 Run the bot using the command `python maakay-bot.py`.
 
-To run django server, navigate to API directory and use command `python manage.py runserver`.
+To run django server, use command `python manage.py runserver`.
 
 Refer `/core` and `/maakay` for API reference.
 
