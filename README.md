@@ -60,13 +60,23 @@ Refer `/core` and `/maakay` for API reference.
 
 `/withdraw tnbc <amount>`: Withdraw TNBC into your withdrawal address.
 
+![Withdraw TNBC](https://media.giphy.com/media/LAXxlgTSH48y2uM0Hz/giphy.gif)
+
 `/transactions tnbc`: List all your deposit and withdraw history.
+
+![Transactions](https://media.giphy.com/media/rEvB7PEPb68QUG5wO5/giphy.gif)
 
 `/profile <user (optional)>`: Check your or other user's maakay gaming profile.
 
+![Profile](https://media.giphy.com/media/oIIXHQjhXKpAQTyMW6/giphy.gif)
+
 `/tip tnbc <user> <amount> <message>`: Tip users TNBC with your beautiful message.
 
+![Tip New](https://media.giphy.com/media/HAWj7zDnDLmTRle2Vj/giphy.gif)
+
 `/tip history`: Check your tip history.
+
+![Tip History](https://media.giphy.com/media/4g5qHsQpYqQUbcr9lF/giphy.gif)
 
 `/challenge new <title> <amount> <contender> <referee>`: Start a new challenge with the contender with referee to reward once challenge is over.
 
@@ -74,11 +84,15 @@ Refer `/core` and `/maakay` for API reference.
 
 `/challenge all`: List all your active challenges.
 
+![Challenge all](https://media.giphy.com/media/NgZgGmNEVauAcvJeTV/giphy.gif)
+
 `/challenge reward <challenge_id> <winner>`: Reward the winner of the challenge.
 
 ![Challenge Reward](https://media.giphy.com/media/GtemRFOnKXsZLlRrC7/giphy.gif)
 
 `/challenge history`: List your challenge history.
+
+![Challenge history](https://media.giphy.com/media/o88OqoDzd11gKUiU8N/giphy.gif)
 
 `/host challenge <title> <description> <amount> <url (optional)>`: Host a new challenge with big prizes.
 
@@ -90,4 +104,8 @@ Refer `/core` and `/maakay` for API reference.
 
 `/hosted history`: View your hosted challenge history.
 
+![Hosted History](https://media.giphy.com/media/4vtDhoCI9cBENgdMMH/giphy.gif)
+
 `/hosted all`: View your active hosted challenges.
+
+![Hosted All](https://media.giphy.com/media/JU3S4SQLyuyyQ5NNM1/giphy.gif)
