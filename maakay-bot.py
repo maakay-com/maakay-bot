@@ -34,11 +34,20 @@ slash = SlashCommand(bot, sync_commands=True)
 gifs = {
     "new_challenge": "https://media.giphy.com/media/NEm5Alpm2Lnkt7rWGD/giphy.gif",
     "reward_challenge": "https://media.giphy.com/media/GtemRFOnKXsZLlRrC7/giphy.gif",
+    "challenge_all": "https://media.giphy.com/media/NgZgGmNEVauAcvJeTV/giphy.gif",
+    "challenge_history": "https://media.giphy.com/media/o88OqoDzd11gKUiU8N/giphy.gif",
     "new_hosted_challenge": "https://media.giphy.com/media/iRd2acSIYlV3wWSqls/giphy.gif",
     "reward_hosted_challenge": "https://media.giphy.com/media/ez06jglQfHaXxhYDxg/giphy.gif",
+    "hosted_all": "https://media.giphy.com/media/JU3S4SQLyuyyQ5NNM1/giphy.gif",
+    "hosted_history": "https://media.giphy.com/media/4vtDhoCI9cBENgdMMH/giphy.gif",
     "set_withdraw_address": "https://media.giphy.com/media/NmHoXuxvzwTuTA7mGb/giphy.gif",
     "deposit": "https://media.giphy.com/media/3SKSF94UXNnJ3fFSoA/giphy.gif",
-    "balance": "https://media.giphy.com/media/uJBfvosVp38Ws2VpDh/giphy.gif"
+    "balance": "https://media.giphy.com/media/uJBfvosVp38Ws2VpDh/giphy.gif",
+    "tip_new": "https://media.giphy.com/media/HAWj7zDnDLmTRle2Vj/giphy.gif",
+    "tip_history": "https://media.giphy.com/media/4g5qHsQpYqQUbcr9lF/giphy.gif",
+    "withdraw": "https://media.giphy.com/media/LAXxlgTSH48y2uM0Hz/giphy.gif",
+    "transactions": "https://media.giphy.com/media/rEvB7PEPb68QUG5wO5/giphy.gif",
+    "profile": "https://media.giphy.com/media/oIIXHQjhXKpAQTyMW6/giphy.gif"
 }
 
 @bot.event
@@ -134,10 +143,19 @@ async def help_hosted_challenge(ctx):
     create_option(name="command_name", description="Command which you wanna see gif of", option_type=3, required=True, choices=[
         create_choice(name="Create Challenge", value="new_challenge"),
         create_choice(name="Reward Challenge", value="reward_challenge"),
+        create_choice(name="Challenge History", value="challenge_history"),
+        create_choice(name="Active Challenges", value="challenge_all"),
         create_choice(name="Deposit TNBC", value="deposit"),
+        create_choice(name="Withdraw TNBC", value="withdraw"),
         create_choice(name="Check Balance", value="balance"),
+        create_choice(name="Transactions History", value="transactions"),
+        create_choice(name="Check user profile", value="profile"),
+        create_choice(name="Tip an user", value="tip_new"),
+        create_choice(name="Check tip history", value="tip_history"),
         create_choice(name="Host a challenge", value="new_hosted_challenge"),
         create_choice(name="Reward a hosted challenge", value="reward_hosted_challenge"),
+        create_choice(name="Hosted challenge history", value="hosted_history"),
+        create_choice(name="Active Hosted Challenges", value="hosted_all"),
         create_choice(name="Set withdraw address", value="set_withdraw_address"),
         ])
     ])
