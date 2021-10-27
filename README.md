@@ -1,6 +1,16 @@
-### Welcome to Maakay Bot
 
-#### Getting Started
+
+<center> <h1> Maakay Bot </h1></center> 
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white) ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green
+)  ![Django](https://img.shields.io/badge/DJANGO-REST-ff1709?style=for-the-badge&logo=django&logoColor=white&color=ff1709&labelColor=gray
+)
+<h3>Tip friends, create challenges or take part in tournament</h3> 
+
+<h4> About Maakay bot
+
+Maakay-bot is a discord bot made to expand the use TNBC(The new boston coin) around the gaming community by introducing shiny commands specific to gamers. Read below to know more!
+
+#### Contributing
 Clone the repo.
 
 Activate the virtual environment.
@@ -30,12 +40,20 @@ Run the bot using the command `python maakay-bot.py`.
 
 To run django server, navigate to API directory and use command `python manage.py runserver`.
 
+Refer `/core` and `/maakay` for API reference.
+
 #### Commands
 `/balance`: Check your tnbc balance.
 
+![Balance](https://media.giphy.com/media/uJBfvosVp38Ws2VpDh/giphy.gif)
+
 `/deposit tnbc`: Deposit TNBC into your maakay account.
 
+![Deposit](https://media.giphy.com/media/3SKSF94UXNnJ3fFSoA/giphy.gif)
+
 `/set_withdrawl_address tnbc`: Set your TNBC withdrawal address.
+
+![Set withdrawal adress](https://media.giphy.com/media/NmHoXuxvzwTuTA7mGb/giphy.gif)
 
 `/withdraw tnbc <amount>`: Withdraw TNBC into your withdrawal address.
 
@@ -49,15 +67,23 @@ To run django server, navigate to API directory and use command `python manage.p
 
 `/challenge new <title> <amount> <contender> <referee>`: Start a new challenge with the contender with referee to reward once challenge is over.
 
+![Challenge new](https://media.giphy.com/media/NEm5Alpm2Lnkt7rWGD/giphy.gif)
+
 `/challenge all`: List all your active challenges.
 
 `/challenge reward <challenge_id> <winner>`: Reward the winner of the challenge.
+
+![Challenge Reward](https://media.giphy.com/media/GtemRFOnKXsZLlRrC7/giphy.gif)
 
 `/challenge history`: List your challenge history.
 
 `/host challenge <title> <description> <amount> <url (optional)>`: Host a new challenge with big prizes.
 
+![Host new](https://media.giphy.com/media/iRd2acSIYlV3wWSqls/giphy.gif)
+
 `/host reward <challenge_id> <winner>`: Reward the winner of the challenge.
+
+![Reward Hosted](https://media.giphy.com/media/ez06jglQfHaXxhYDxg/giphy.gif)
 
 `/hosted history`: View your hosted challenge history.
 
