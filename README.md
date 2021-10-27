@@ -1,12 +1,12 @@
 
 
-<h1> Maakay Bot </h1>
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white) ![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green
-)  ![Django](https://img.shields.io/badge/DJANGO-REST-ff1709?style=for-the-badge&logo=django&logoColor=white&color=ff1709&labelColor=gray
-)
+<h1 align="center"> Maakay Bot </h1>
+<p>
+<img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green"> <img src="https://img.shields.io/badge/DJANGO-REST-ff1709?style=for-the-badge&logo=django&logoColor=white&color=ff1709&labelColor=gray"> <img src="https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white">
+</p>
 <h3>Tip friends, create challenges or take part in tournament</h3> 
 
-<h4> About Maakay bot
+<h4> About Maakay bot</h4>
 
 Maakay-bot is a discord bot made to expand the use TNBC(The new boston coin) around the gaming community by introducing shiny commands specific to gamers. Read below to know more!
 
