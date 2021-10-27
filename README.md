@@ -1,6 +1,9 @@
 
+<p align="center" style="border-radius: 50%">
+  <img src="https://user-images.githubusercontent.com/27518021/137136402-800cea06-f7bb-4774-b0fc-fd7860551b5c.jpg">
+  <h1 align="center"> Maakay Bot </h1>
+</p>
 
-<h1 align="center"> Maakay Bot </h1>
 <p>
 <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white"> <img src="https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=green"> <img src="https://img.shields.io/badge/DJANGO-REST-ff1709?style=for-the-badge&logo=django&logoColor=white&color=ff1709&labelColor=gray"> <img src="https://img.shields.io/badge/Discord-7289DA?style=for-the-badge&logo=discord&logoColor=white">
 </p>
