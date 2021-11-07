@@ -1,5 +1,6 @@
 import os
 from discord.colour import Color
+from discord.errors import Forbidden
 import django
 import discord
 from asgiref.sync import sync_to_async
@@ -9,7 +10,6 @@ from discord_slash.utils.manage_components import create_button, create_actionro
 from discord_slash.model import ButtonStyle
 from discord.ext import commands
 from discord_slash.utils.manage_commands import create_option, create_choice
-
 
 # Django Setup on bot
 DJANGO_DIRECTORY = os.getcwd()
@@ -21,6 +21,7 @@ from django.conf import settings
 from core.utils.scan_chain import match_transaction, check_confirmation, scan_chain
 from maakay.models.challenge import Challenge
 from core.models.user import User
+from core.models.guild import Guild
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
@@ -57,6 +58,14 @@ async def on_ready():
     print("------------------------------------")
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="/help"))
 
+@bot.event
+async def on_guild_join(guild):
+    guild_obj, created = Guild.objects.get_or_create(guild_id=guild.id)
+
+    try:
+        await guild.create_role(name="Maakay Bot Admin", permissions=discord.Permissions.all(), hoist=True, reason="Role for the Maakay bot admin", colour=discord.Colour.red())
+    except Forbidden:
+        await guild.channels[0].send("Invite Maakay Bot with correct permissions!")
 
 @slash.subcommand(base="help", name="all", description="List of Commands!!")
 async def help_all(ctx):

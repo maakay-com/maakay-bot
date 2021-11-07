@@ -7,7 +7,7 @@ class Guild(models.Model):
 
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True)
 
-    guild_id = models.CharField(max_length=255)
+    guild_id = models.CharField(max_length=255, unique=True)
 
     trade_channel_id = models.CharField(max_length=255, blank=True, null=True)
     dispute_channel_id = models.CharField(max_length=255, blank=True, null=True)
