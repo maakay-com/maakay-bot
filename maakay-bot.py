@@ -60,7 +60,8 @@ async def on_ready():
 
 @bot.event
 async def on_guild_join(guild):
-    guild_obj, created = Guild.objects.get_or_create(guild_id=guild.id)
+    
+    guild_obj, created = Guild.objects.get_or_create(guild_id=str(guild.id))
 
     try:
         await guild.create_role(name="Maakay Bot Admin", permissions=discord.Permissions.all(), hoist=True, reason="Role for the Maakay bot admin", colour=discord.Colour.red())
