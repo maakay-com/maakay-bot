@@ -77,7 +77,7 @@ class tip(commands.Cog):
                     recepient_profile[0].save()
 
                     if message:
-                        await ctx.send(f"{ctx.author.mention} tipped {user.mention} {amount} TNBC for *{message}*.")
+                        await ctx.send(f"{ctx.author.mention} tipped {user.mention} {amount} TNBC.\nMessage: {message}.")
                     else:
                         await ctx.send(f"{ctx.author.mention} tipped {user.mention} {amount} TNBC.")
             else:

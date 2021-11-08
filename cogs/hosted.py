@@ -215,6 +215,46 @@ class hosted_challenge(commands.Cog):
             embed.add_field(name='404!', value="You have not hosted/ participated in hosted challenges.")
 
         await ctx.send(embed=embed, hidden=True)
+    
+    @cog_ext.cog_subcommand(base="hosted", name="cancel", options=[create_option(name="challenge_id", description="Id of the hosted challenge", option_type=3, required=True)])
+    async def hosted_challenge_cancel(self, ctx, challenge_id):
+
+        obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+        
+        embed = discord.Embed(title="Cancelled Hosted Challenge", color=Color.orange())
+
+        if Tournament.objects.filter(Q(hosted_by=obj), Q(uuid_hex=challenge_id)).exists():
+
+            tournament = await sync_to_async(Tournament.objects.get)(uuid_hex=challenge_id)
+
+            if tournament.status == Tournament.ONGOING:
+
+                tournament.status = Tournament.CANCELLED
+                tournament.save()
+
+                tournament.hosted_by.locked -= tournament.amount
+                tournament.hosted_by.save()
+
+                hosted_by = await self.bot.fetch_user(ctx.author.id)
+
+                tournament_channel = self.bot.get_channel(int(settings.TOURNAMENT_CHANNEL_ID))
+                tournament_embed = discord.Embed(title=f"Hosted Challenge Cancelled!!", description="")
+                tournament_embed.add_field(name="Title", value=tournament.title)
+                tournament_embed.add_field(name="Description", value=tournament.description)
+                tournament_embed.add_field(name="Reward (TNBC)", value=f"**{convert_to_decimal(tournament.amount - settings.TOURNAMENT_FEE)}**", inline=False)
+                tournament_embed.add_field(name="Cancelled by", value=hosted_by.mention)
+                tournament_embed.set_thumbnail(url=ctx.author.avatar_url)
+                await tournament_channel.send(embed=tournament_embed)
+
+                embed.add_field(name=tournament.title, value="Hosted Challenge has been cancelled")
+                await ctx.send(embed=embed, hidden=True)
+
+            else:
+                embed.add_field(name="Error", value="Sorry cancelled or completed challenge cannnot be cancelled.")
+                await ctx.send(embed=embed)
+        else:
+            embed.add_field(name="Error!", value="You don't have the permission to cancel this challenge.")
+            await ctx.send(embed=embed)
 
 
 def setup(bot):

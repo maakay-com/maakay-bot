@@ -153,11 +153,17 @@ class challenge(commands.Cog):
     async def challenge_cancel(self, ctx, challenge_id):
 
         obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
+
         embed = discord.Embed(title="Cancel Challenge", color=Color.orange())
+
         if Challenge.objects.filter(Q(challenger=obj) | Q(contender=obj), Q(uuid_hex=challenge_id)).exists():
+
             challenge = await sync_to_async(Challenge.objects.get)(uuid_hex=challenge_id)
+
             if challenge.status == Challenge.NEW:
                 challenge.status = Challenge.CANCELLED
+                challenge.save()
+
                 if challenge.contender_status == Challenge.ACCEPTED:
                     challenge.contender.locked -= challenge.amount
                     challenge.contender.save()
