@@ -26,7 +26,7 @@ class admin(commands.Cog):
         if has_role:
             if len(address) == 64:
                 guild, created = await sync_to_async(Guild.objects.get_or_create)(guild_id=str(ctx.guild.id))
-                guild.withdrawl_address = address
+                guild.withdrawal_address = address
                 guild.save()
 
                 await ctx.send(f"Withdrawl address for **{ctx.guild.name}** set to `{address}` successfully!")
