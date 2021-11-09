@@ -64,16 +64,19 @@ async def on_guild_join(guild):
     guild_obj, created = Guild.objects.get_or_create(guild_id=str(guild.id))
 
     try:
-        await guild.create_role(name="Maakay Bot Admin", permissions=discord.Permissions.all(), hoist=True, reason="Role for the Maakay bot admin", colour=discord.Colour.red())
+        role = await guild.create_role(name="Maakay Bot Admin", hoist=True, reason="Role for the Maakay bot admin", colour=discord.Colour.red())
+        guild_obj.manager_role_id = role.id
+        guild_obj.save()
+
     except Forbidden:
         await guild.channels[0].send("Invite Maakay Bot with correct permissions!")
 
 @slash.subcommand(base="help", name="all", description="List of Commands!!")
 async def help_all(ctx):
+    
     embed = discord.Embed(title="Commands", color=Color.orange(), description="Use `/help <category>` for category specific commands")
     embed.set_footer(text="Fields with * are required!!")
     embed.set_thumbnail(url=bot.user.avatar_url)
-
     embed.add_field(name="/balance", value="Check your balance.", inline=False)
     embed.add_field(name="/deposit tnbc", value="Deposit TNBC into your maakay account.", inline=False)
     embed.add_field(name="/set_withdrawl_address tnbc `<your withdrawl address>*`", value="Set a new withdrawl address.", inline=False)

@@ -18,22 +18,28 @@ class admin(commands.Cog):
 
         has_role = False
 
+        guild, created = await sync_to_async(Guild.objects.get_or_create)(guild_id=str(ctx.guild.id))
+
         for role in ctx.author.roles:
-            if role.name == "Maakay Bot Admin":
+
+            if role.id == int(guild.manager_role_id):
                 has_role = True
                 break
         
         if has_role:
             if len(address) == 64:
-                guild, created = await sync_to_async(Guild.objects.get_or_create)(guild_id=str(ctx.guild.id))
+                
                 guild.withdrawal_address = address
                 guild.save()
 
                 await ctx.send(f"Withdrawl address for **{ctx.guild.name}** set to `{address}` successfully!")
             else:
                 await ctx.send("Invalid Withdrawl Address!")
+                
         else:
-            await ctx.send("You don't have the required `Maakay Bot Admin` Role!!")
+
+            role = ctx.guild.get_role(int(guild.manager_role_id))
+            await ctx.send(f"You don't have the required `{role.name}` Role!!")
 
 
 def setup(bot):
