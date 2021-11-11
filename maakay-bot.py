@@ -69,7 +69,11 @@ async def on_guild_join(guild):
         guild_obj.save()
 
     except Forbidden:
-        await guild.channels[0].send("Invite Maakay Bot with correct permissions!")
+
+        guild_obj.has_permissions = False
+        guild_obj.save()
+
+        print("Permission error smh")
 
 @slash.subcommand(base="help", name="all", description="List of Commands!!")
 async def help_all(ctx):
