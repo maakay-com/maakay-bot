@@ -63,18 +63,46 @@ async def on_guild_join(guild):
     
     guild_obj, created = Guild.objects.get_or_create(guild_id=str(guild.id))
 
-    try:
-        role = await guild.create_role(name="Maakay Bot Admin", hoist=True, reason="Role for the Maakay bot admin", colour=discord.Colour.red())
-        guild_obj.manager_role_id = role.id
-        guild_obj.has_permissions = True
-        guild_obj.save()
+    exists = False
 
-    except Forbidden:
+    if guild_obj.manager_role_id:
 
-        guild_obj.has_permissions = False
-        guild_obj.save()
+        for role in guild.roles:
 
-        print("Permission error smh")
+            if role.id == int(guild_obj.manager_role_id):
+
+                exists = True
+                break
+
+        
+        if not exists:
+
+            try:
+                role = await guild.create_role(name="Maakay Bot Admin", hoist=True, reason="Role for the Maakay bot admin", colour=discord.Colour.red())
+                guild_obj.manager_role_id = role.id
+                guild_obj.has_permissions = True
+                guild_obj.save()
+
+            except Forbidden:
+
+                guild_obj.has_permissions = False
+                guild_obj.save()
+
+                print("Permission error smh")
+    
+    else:
+        try:
+            role = await guild.create_role(name="Maakay Bot Admin", hoist=True, reason="Role for the Maakay bot admin", colour=discord.Colour.red())
+            guild_obj.manager_role_id = role.id
+            guild_obj.has_permissions = True
+            guild_obj.save()
+
+        except Forbidden:
+
+            guild_obj.has_permissions = False
+            guild_obj.save()
+
+            print("Permission error smh")
 
 @slash.subcommand(base="help", name="all", description="List of Commands!!")
 async def help_all(ctx):
