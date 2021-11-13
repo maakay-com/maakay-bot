@@ -1,5 +1,6 @@
 import os
 from discord.colour import Color
+from discord.errors import Forbidden
 import django
 import discord
 from asgiref.sync import sync_to_async
@@ -9,7 +10,6 @@ from discord_slash.utils.manage_components import create_button, create_actionro
 from discord_slash.model import ButtonStyle
 from discord.ext import commands
 from discord_slash.utils.manage_commands import create_option, create_choice
-
 
 # Django Setup on bot
 DJANGO_DIRECTORY = os.getcwd()
@@ -21,6 +21,7 @@ from django.conf import settings
 from core.utils.scan_chain import match_transaction, check_confirmation, scan_chain
 from maakay.models.challenge import Challenge
 from core.models.user import User
+from core.models.guild import Guild
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
@@ -57,13 +58,46 @@ async def on_ready():
     print("------------------------------------")
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="/help"))
 
+async def create_role(guild_obj, guild):
+    try:
+        role = await guild.create_role(name="Maakay Bot Admin", hoist=True, reason="Role for the Maakay bot admin", colour=discord.Colour.red())
+        guild_obj.manager_role_id = role.id
+        guild_obj.has_permissions = True
+        guild_obj.save()
+
+    except Forbidden:
+
+        guild_obj.has_permissions = False
+        guild_obj.save()
+
+        print("Permission error smh")
+
+@bot.event
+async def on_guild_join(guild):
+    
+    guild_obj, created = Guild.objects.get_or_create(guild_id=str(guild.id))
+
+    exists = False
+
+    if guild_obj.manager_role_id:
+        for role in guild.roles:
+            if role.id == int(guild_obj.manager_role_id):
+
+                exists = True
+                break
+   
+        if not exists:
+            create_role(guild_obj, guild)
+    
+    else:
+        create_role(guild_obj, guild)
 
 @slash.subcommand(base="help", name="all", description="List of Commands!!")
 async def help_all(ctx):
+    
     embed = discord.Embed(title="Commands", color=Color.orange(), description="Use `/help <category>` for category specific commands")
     embed.set_footer(text="Fields with * are required!!")
     embed.set_thumbnail(url=bot.user.avatar_url)
-
     embed.add_field(name="/balance", value="Check your balance.", inline=False)
     embed.add_field(name="/deposit tnbc", value="Deposit TNBC into your maakay account.", inline=False)
     embed.add_field(name="/set_withdrawl_address tnbc `<your withdrawl address>*`", value="Set a new withdrawl address.", inline=False)
