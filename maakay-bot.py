@@ -66,6 +66,7 @@ async def on_guild_join(guild):
     try:
         role = await guild.create_role(name="Maakay Bot Admin", hoist=True, reason="Role for the Maakay bot admin", colour=discord.Colour.red())
         guild_obj.manager_role_id = role.id
+        guild_obj.has_permissions = True
         guild_obj.save()
 
     except Forbidden:

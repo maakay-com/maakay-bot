@@ -21,6 +21,7 @@ class admin(commands.Cog):
         guild, created = await sync_to_async(Guild.objects.get_or_create)(guild_id=str(ctx.guild.id))
 
         if guild.has_permissions:
+            
             has_role = False
             for role in ctx.author.roles:
 
@@ -34,17 +35,17 @@ class admin(commands.Cog):
                     guild.withdrawal_address = address
                     guild.save()
 
-                    await ctx.send(f"Withdrawl address for **{ctx.guild.name}** set to `{address}` successfully!")
+                    await ctx.send(f"Withdrawl address for **{ctx.guild.name}** set to `{address}` successfully!", hidden=True)
                 else:
-                    await ctx.send("Invalid Withdrawl Address!")
+                    await ctx.send("Invalid Withdrawl Address!", hidden=True)
                     
             else:
-
                 role = ctx.guild.get_role(int(guild.manager_role_id))
-                await ctx.send(f"You don't have the required `{role.name}` Role!!")
+                await ctx.send(f"You don't have the required `{role.name}` Role!!", hidden=True)
         
         else:
-            await ctx.send("Invite Maakay bot with required permissions!!", hidden=True)
+            await ctx.send("Oh no, seems like Maakay-bot was not invited with correct permissions!!, \nHere are some steps to resolve the issue! \n ```1. Kick Maakay-bot. \n2. Invite Maakay-bot with 'Manage Roles' and 'Send Message' permissions.```", hidden=True)
+
 
 
 def setup(bot):
