@@ -1,5 +1,4 @@
 import uuid
-from discord.ext.commands.core import has_permissions
 
 from django.db import models
 

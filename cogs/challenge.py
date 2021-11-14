@@ -13,8 +13,6 @@ from maakay.shortcuts import convert_to_decimal
 from django.db.models import Q, F
 from maakay.models.challenge import Challenge
 
-CHALLENGE_FEE_MULTIPLICATION = (100 - settings.CHALLENGE_FEE) / 100
-
 
 class challenge(commands.Cog):
     def __init__(self, bot):
@@ -130,6 +128,7 @@ class challenge(commands.Cog):
                 challenge.status = Challenge.COMPLETED
                 challenge.save()
 
+                CHALLENGE_FEE_MULTIPLICATION = (100 - settings.CHALLENGE_FEE) / 100
                 winner.balance += challenge.amount * CHALLENGE_FEE_MULTIPLICATION
                 winner.locked -= challenge.amount
                 winner.save()

@@ -215,12 +215,12 @@ class hosted_challenge(commands.Cog):
             embed.add_field(name='404!', value="You have not hosted/ participated in hosted challenges.")
 
         await ctx.send(embed=embed, hidden=True)
-    
+
     @cog_ext.cog_subcommand(base="hosted", name="cancel", options=[create_option(name="challenge_id", description="Id of the hosted challenge", option_type=3, required=True)])
     async def hosted_challenge_cancel(self, ctx, challenge_id):
 
         obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
-        
+
         embed = discord.Embed(title="Cancelled Hosted Challenge", color=Color.orange())
 
         if Tournament.objects.filter(Q(hosted_by=obj), Q(uuid_hex=challenge_id)).exists():
@@ -238,7 +238,7 @@ class hosted_challenge(commands.Cog):
                 hosted_by = await self.bot.fetch_user(ctx.author.id)
 
                 tournament_channel = self.bot.get_channel(int(settings.TOURNAMENT_CHANNEL_ID))
-                tournament_embed = discord.Embed(title=f"Hosted Challenge Cancelled!!", description="")
+                tournament_embed = discord.Embed(title="Hosted Challenge Cancelled!!", description="")
                 tournament_embed.add_field(name="Title", value=tournament.title)
                 tournament_embed.add_field(name="Description", value=tournament.description)
                 tournament_embed.add_field(name="Reward (TNBC)", value=f"**{convert_to_decimal(tournament.amount - settings.TOURNAMENT_FEE)}**", inline=False)

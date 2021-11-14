@@ -51,12 +51,14 @@ gifs = {
     "profile": "https://media.giphy.com/media/oIIXHQjhXKpAQTyMW6/giphy.gif"
 }
 
+
 @bot.event
 async def on_ready():
     print("------------------------------------")
     print("maakay Bot Running:")
     print("------------------------------------")
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.playing, name="/help"))
+
 
 async def create_role(guild_obj, guild):
     try:
@@ -69,12 +71,12 @@ async def create_role(guild_obj, guild):
 
         guild_obj.has_permissions = False
         guild_obj.save()
-
         print("Permission error smh")
+
 
 @bot.event
 async def on_guild_join(guild):
-    
+
     guild_obj, created = Guild.objects.get_or_create(guild_id=str(guild.id))
 
     exists = False
@@ -85,16 +87,17 @@ async def on_guild_join(guild):
 
                 exists = True
                 break
-   
+
         if not exists:
-            create_role(guild_obj, guild)
-    
+            await create_role(guild_obj, guild)
+
     else:
-        create_role(guild_obj, guild)
+        await create_role(guild_obj, guild)
+
 
 @slash.subcommand(base="help", name="all", description="List of Commands!!")
 async def help_all(ctx):
-    
+
     embed = discord.Embed(title="Commands", color=Color.orange(), description="Use `/help <category>` for category specific commands")
     embed.set_footer(text="Fields with * are required!!")
     embed.set_thumbnail(url=bot.user.avatar_url)
@@ -160,6 +163,7 @@ async def help_challenge(ctx):
 
     await ctx.send(embed=embed, hidden=True)
 
+
 @slash.subcommand(base="help", name="hosted_challenge", description="List of Commands from Hosted Challenge Category")
 async def help_hosted_challenge(ctx):
     embed = discord.Embed(title="Hosted Challenge Commands", color=Color.orange())
@@ -173,27 +177,35 @@ async def help_hosted_challenge(ctx):
 
     await ctx.send(embed=embed, hidden=True)
 
-@slash.subcommand(base="help", name="gif", description="Show gif for usage of a  specific command", options=[
-    create_option(name="command_name", description="Command which you wanna see gif of", option_type=3, required=True, choices=[
-        create_choice(name="Create Challenge", value="new_challenge"),
-        create_choice(name="Reward Challenge", value="reward_challenge"),
-        create_choice(name="Challenge History", value="challenge_history"),
-        create_choice(name="Active Challenges", value="challenge_all"),
-        create_choice(name="Deposit TNBC", value="deposit"),
-        create_choice(name="Withdraw TNBC", value="withdraw"),
-        create_choice(name="Check Balance", value="balance"),
-        create_choice(name="Transactions History", value="transactions"),
-        create_choice(name="Check user profile", value="profile"),
-        create_choice(name="Tip an user", value="tip_new"),
-        create_choice(name="Check tip history", value="tip_history"),
-        create_choice(name="Host a challenge", value="new_hosted_challenge"),
-        create_choice(name="Reward a hosted challenge", value="reward_hosted_challenge"),
-        create_choice(name="Hosted challenge history", value="hosted_history"),
-        create_choice(name="Active Hosted Challenges", value="hosted_all"),
-        create_choice(name="Set withdraw address", value="set_withdraw_address"),
-        ])
-    ])
 
+@slash.subcommand(base="help",
+                  name="gif",
+                  description="Show gif for usage of a  specific command",
+                  options=[
+                      create_option(
+                          name="command_name",
+                          description="Command which you wanna see gif of",
+                          option_type=3,
+                          required=True,
+                          choices=[
+                              create_choice(name="Create Challenge", value="new_challenge"),
+                              create_choice(name="Reward Challenge", value="reward_challenge"),
+                              create_choice(name="Challenge History", value="challenge_history"),
+                              create_choice(name="Active Challenges", value="challenge_all"),
+                              create_choice(name="Deposit TNBC", value="deposit"),
+                              create_choice(name="Withdraw TNBC", value="withdraw"),
+                              create_choice(name="Check Balance", value="balance"),
+                              create_choice(name="Transactions History", value="transactions"),
+                              create_choice(name="Check user profile", value="profile"),
+                              create_choice(name="Tip an user", value="tip_new"),
+                              create_choice(name="Check tip history", value="tip_history"),
+                              create_choice(name="Host a challenge", value="new_hosted_challenge"),
+                              create_choice(name="Reward a hosted challenge", value="reward_hosted_challenge"),
+                              create_choice(name="Hosted challenge history", value="hosted_history"),
+                              create_choice(name="Active Hosted Challenges", value="hosted_all"),
+                              create_choice(name="Set withdraw address", value="set_withdraw_address"),
+                          ])
+                  ])
 async def help_gif(ctx, command_name):
     await ctx.send(gifs[command_name], hidden=True)
 
