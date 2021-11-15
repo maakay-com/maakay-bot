@@ -10,6 +10,7 @@ from discord_slash.utils.manage_components import create_button, create_actionro
 from discord_slash.model import ButtonStyle
 from discord.ext import commands
 from discord_slash.utils.manage_commands import create_option, create_choice
+from maakay.shortcuts import convert_to_decimal
 
 # Django Setup on bot
 DJANGO_DIRECTORY = os.getcwd()
@@ -252,14 +253,14 @@ async def on_component(ctx: ComponentContext):
                             challenge.save()
                             embed.add_field(name="Accepted", value=f"Challenge accepted by contender {contender.mention}", inline=False)
                             embed.add_field(name="Title", value=challenge.title)
-                            embed.add_field(name="Amount (TNBC)", value=f"**{challenge.get_decimal_amount()}**")
+                            embed.add_field(name="Amount (TNBC)", value=f"**{convert_to_decimal(challenge.amount)}**")
                             embed.add_field(name="Challenger", value=f"{challenger.mention}")
                             embed.add_field(name="Contender", value=f"{contender.mention}")
                             embed.add_field(name="Referee", value=f"{referee.mention}")
                             embed.add_field(name="Status", value=challenge.status)
                             await ctx.send(f"{challenger.mention} {referee.mention}", embed=embed)
                         else:
-                            embed.add_field(name="Error!", value=f"You only have {obj.get_decimal_available_balance()} TNBC out of {challenge.get_decimal_amount()} TNBC.\nPlease use `/user deposit` command to deposit TNBC.")
+                            embed.add_field(name="Error!", value=f"You only have {convert_to_decimal(obj.get_available_balance())} TNBC out of {convert_to_decimal(challenge.amount)} TNBC.\nPlease use `/user deposit` command to deposit TNBC.")
                             await ctx.send(embed=embed, hidden=True)
                     else:
                         challenge.contender_status = Challenge.REJECTED
@@ -283,7 +284,7 @@ async def on_component(ctx: ComponentContext):
                         challenge.save()
                         embed.add_field(name="Accepted", value=f"Challenge accepted by referee {referee.mention}", inline=False)
                         embed.add_field(name="Title", value=challenge.title)
-                        embed.add_field(name="Amount (TNBC)", value=f"**{challenge.get_decimal_amount()}**")
+                        embed.add_field(name="Amount (TNBC)", value=f"**{convert_to_decimal(challenge.amount)}**")
                         embed.add_field(name="Challenger", value=f"{challenger.mention}")
                         embed.add_field(name="Contender", value=f"{contender.mention}")
                         embed.add_field(name="Referee", value=f"{referee.mention}")
@@ -321,9 +322,9 @@ async def on_component(ctx: ComponentContext):
         obj, created = await sync_to_async(User.objects.get_or_create)(discord_id=str(ctx.author.id))
 
         embed = discord.Embed(title="Scan Completed")
-        embed.add_field(name='New Balance', value=obj.get_decimal_balance())
-        embed.add_field(name='Locked Amount', value=obj.get_decimal_locked_amount())
-        embed.add_field(name='Available Balance', value=obj.get_decimal_available_balance())
+        embed.add_field(name='New Balance', value=convert_to_decimal(obj.balance))
+        embed.add_field(name='Locked Amount', value=convert_to_decimal(obj.locked))
+        embed.add_field(name='Available Balance', value=convert_to_decimal(obj.get_available_balance()))
 
         await ctx.send(embed=embed, hidden=True, components=[create_actionrow(create_button(custom_id="chain-scan", style=ButtonStyle.green, label="Scan Again?"))])
 

@@ -1,8 +1,7 @@
 from uuid import uuid4
 import random
-from django.conf import settings
-
 from django.db import models
+
 from ..models.transaction import Transaction
 
 
@@ -18,25 +17,6 @@ class User(models.Model):
 
     def get_available_balance(self):
         return self.balance - self.locked
-
-    def get_decimal_balance(self):
-        balance = self.balance / settings.TNBC_MULTIPLICATION_FACTOR
-        rounded_balance = round(balance, 4)
-        return rounded_balance
-
-    def get_decimal_locked_amount(self):
-        locked = self.locked / settings.TNBC_MULTIPLICATION_FACTOR
-        rounded_locked = round(locked, 4)
-        return rounded_locked
-
-    def get_decimal_available_balance(self):
-        available_balance = (self.balance - self.locked) / settings.TNBC_MULTIPLICATION_FACTOR
-        rounded_available_balance = round(available_balance, 4)
-        return rounded_available_balance
-
-    def get_int_available_balance(self):
-        available_balance = int((self.balance - self.locked) / settings.TNBC_MULTIPLICATION_FACTOR)
-        return available_balance
 
     def __str__(self):
         return f"User: {self.discord_id}; Balance: {self.balance}; Available: {self.get_available_balance()}"
@@ -83,11 +63,6 @@ class UserTransactionHistory(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def get_decimal_amount(self):
-        amount = self.amount / settings.TNBC_MULTIPLICATION_FACTOR
-        rounded_amount = round(amount, 4)
-        return rounded_amount
 
     def __str__(self):
         return f"User: {self.user} - {self.type} - {self.amount}"

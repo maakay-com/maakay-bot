@@ -69,10 +69,10 @@ class challenge(commands.Cog):
                         embed.set_footer(text=f"Challenge id - {challenge.uuid_hex}")
                         await ctx.send(f"{contender.mention} {referee.mention}", embed=embed, components=[create_actionrow(create_button(custom_id=f"challenge_accept_{challenge.uuid}", style=ButtonStyle.green, label="Accept"), create_button(custom_id=f"challenge_reject_{challenge.uuid}", style=ButtonStyle.red, label="Reject"))], hidden=False)
                     else:
-                        embed.add_field(name="Error", value=f"You only have {challenger_user.get_decimal_available_balance()} TNBC availabe out of {amount}.")
+                        embed.add_field(name="Error", value=f"You only have {convert_to_decimal(challenger_user.get_available_balance())} TNBC availabe out of {amount}.")
                         await ctx.send(embed=embed, hidden=True)
                 else:
-                    embed.add_field(name="Error!", value=f"{contender.mention} only has {contender_user.get_decimal_available_balance()} TNBC available out of {amount}")
+                    embed.add_field(name="Error!", value=f"{contender.mention} only has {convert_to_decimal(contender_user.get_available_balance())} TNBC available out of {amount}")
                     await ctx.send(embed=embed, hidden=True)
             else:
                 embed.add_field(name="Error!", value=f"You can not challenge less than {settings.MINIMUL_CHALLENGE_AMOUNT / settings.TNBC_MULTIPLICATION_FACTOR} TNBC.")

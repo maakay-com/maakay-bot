@@ -12,7 +12,7 @@ from core.utils.send_tnbc import estimate_fee, withdraw_tnbc
 from core.models.transaction import Transaction
 from core.models.statistic import Statistic
 from maakay.models.profile import UserProfile
-from maakay.shortcuts import convert_to_decimal
+from maakay.shortcuts import convert_to_decimal, convert_to_int
 import humanize
 
 
@@ -30,9 +30,9 @@ class general(commands.Cog):
         embed = discord.Embed(color=Color.orange())
         embed.set_author(name=ctx.author.name, icon_url=ctx.author.avatar_url)
         embed.add_field(name='Withdrawal Address', value=obj.withdrawal_address, inline=False)
-        embed.add_field(name='Balance (TNBC)', value=obj.get_decimal_balance())
-        embed.add_field(name='Locked Amount (TNBC)', value=obj.get_decimal_locked_amount())
-        embed.add_field(name='Available Balance (TNBC)', value=obj.get_decimal_available_balance())
+        embed.add_field(name='Balance (TNBC)', value=convert_to_decimal(obj.balance))
+        embed.add_field(name='Locked Amount (TNBC)', value=convert_to_decimal(obj.locked))
+        embed.add_field(name='Available Balance (TNBC)', value=convert_to_decimal(obj.get_available_balance()))
 
         await ctx.send(embed=embed, hidden=True)
 
@@ -107,9 +107,9 @@ class general(commands.Cog):
 
             if fee:
                 if not amount < 1:
-                    if obj.get_int_available_balance() < amount + fee:
+                    if convert_to_int(obj.get_available_balance()) < amount + fee:
                         embed = discord.Embed(title="Inadequate Funds!!",
-                                              description=f"You only have {obj.get_int_available_balance() - fee} withdrawable TNBC (network fees included) available. \n Use `/deposit tnbc` to deposit TNBC!!")
+                                              description=f"You only have {convert_to_int(obj.get_available_balance()) - fee} withdrawable TNBC (network fees included) available. \n Use `/deposit tnbc` to deposit TNBC!!")
 
                     else:
                         block_response, fee = withdraw_tnbc(obj.withdrawal_address, amount, obj.memo)
@@ -176,12 +176,12 @@ class general(commands.Cog):
         user_profile = await sync_to_async(UserProfile.objects.get_or_create)(user=obj)
 
         embed.add_field(name='Total Challenges Won', value=f"{user_profile[0].total_challenges_won}")
-        embed.add_field(name='TNBC won in challenges', value=f"{user_profile[0].get_decimal_total_won_in_challenges()}")
-        embed.add_field(name='TNBC won in hosted challenges', value=f"{user_profile[0].get_decimal_total_won_in_tournaments()}")
+        embed.add_field(name='TNBC won in challenges', value=f"{convert_to_decimal(user_profile[0].total_won_in_challenges)}")
+        embed.add_field(name='TNBC won in hosted challenges', value=f"{convert_to_decimal(user_profile[0].total_won_in_tournaments)}")
         embed.add_field(name='Total Challenges Hosted', value=f"{user_profile[0].total_challenges_hosted}")
         embed.add_field(name='TNBC Spent Hosting Challenges', value=f"{convert_to_decimal(user_profile[0].total_amount_hosted)}")
-        embed.add_field(name='Total Tip Sent', value=f"{user_profile[0].get_decimal_total_tip_sent()}")
-        embed.add_field(name='Total Tip Received', value=f"{user_profile[0].get_decimal_total_tip_received()}")
+        embed.add_field(name='Total Tip Sent', value=f"{convert_to_decimal(user_profile[0].total_tip_sent)}")
+        embed.add_field(name='Total Tip Received', value=f"{convert_to_decimal(user_profile[0].total_tip_received)}")
 
         await ctx.send(embed=embed)
 
@@ -200,7 +200,7 @@ class general(commands.Cog):
 
             natural_day = humanize.naturalday(txs.created_at)
 
-            embed.add_field(name='\u200b', value=f"{txs.type} - {txs.get_decimal_amount()} TNBC - {natural_day}", inline=False)
+            embed.add_field(name='\u200b', value=f"{txs.type} - {convert_to_decimal(txs.amount)} TNBC - {natural_day}", inline=False)
 
         await ctx.send(embed=embed, hidden=True)
 

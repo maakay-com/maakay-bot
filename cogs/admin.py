@@ -1,5 +1,6 @@
 from asgiref.sync import sync_to_async
 import discord
+from discord import Color
 from discord.ext import commands
 from discord_slash import cog_ext
 from discord_slash.utils.manage_commands import create_option
@@ -126,7 +127,7 @@ class admin(commands.Cog):
                         if not amount_of_tnbc < 1:
                             if convert_to_int(guild.guild_balance) < amount_of_tnbc + fee:
                                 embed = discord.Embed(title="Inadequate Funds!!",
-                                                      description=f"This server only has {convert_to_decimal(convert_to_decimal(guild.guild_balance) - fee)} withdrawable TNBC (network fees included) available.")
+                                                      description=f"This server only has {convert_to_int(guild.guild_balance) - fee} withdrawable TNBC (network fees included) available.")
 
                             else:
                                 block_response, fee = withdraw_tnbc(guild.withdrawal_address, amount_of_tnbc, guild.guild_id)
@@ -168,6 +169,41 @@ class admin(commands.Cog):
                         embed = discord.Embed(title="Error!", description="Could not retrive fee info from the bank!!")
                 else:
                     embed = discord.Embed(title="No withdrawal address set!!", description="Use `/set_withdrawal_address tnbc` to set withdrawal address!!")
+            else:
+                role = ctx.guild.get_role(int(guild.manager_role_id))
+                embed = discord.Embed(title="Error", description=f"You don't have the required `{role.name}` role")
+        else:
+            embed = discord.Embed(title="Error",
+                                  description="Oh no, seems like Maakay-bot was not invited with correct permissions!!, \nHere are some steps to resolve the issue! \n1. Kick Maakay-bot. \n2. Invite Maakay-bot with 'Manage Roles' and 'Send Message' permissions.")
+        await ctx.send(embed=embed, hidden=True)
+
+    @cog_ext.cog_subcommand(base="admin",
+                            name="transactions",
+                            description="Check the recent TNBC withdrawls from the discord server!!")
+    async def admin_transactions(self, ctx):
+
+        await ctx.defer(hidden=True)
+
+        guild, created = await sync_to_async(Guild.objects.get_or_create)(guild_id=str(ctx.guild.id))
+
+        if guild.has_permissions:
+
+            has_role = False
+            for role in ctx.author.roles:
+
+                if role.id == int(guild.manager_role_id):
+                    has_role = True
+                    break
+
+            if has_role:
+
+                transactions = (await sync_to_async(GuildTransaction.objects.filter)(guild=guild)).order_by('-created_at')[:5]
+                embed = discord.Embed(title="Transaction History", description="", color=Color.orange())
+
+                for transaction in transactions:
+                    user = await self.bot.fetch_user(int(transaction.withdrawn_by.discord_id))
+                    embed.add_field(name='\u200b', value=f"{convert_to_decimal(transaction.amount)} TNBC {transaction.type} by {user.name}", inline=False)
+
             else:
                 role = ctx.guild.get_role(int(guild.manager_role_id))
                 embed = discord.Embed(title="Error", description=f"You don't have the required `{role.name}` role")

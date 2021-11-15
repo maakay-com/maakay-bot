@@ -1,7 +1,6 @@
 from uuid import uuid4
 
 from django.db import models
-from django.conf import settings
 
 from core.models.user import User
 
@@ -28,26 +27,6 @@ class UserProfile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def get_decimal_total_won_in_challenges(self):
-        amount = self.total_won_in_challenges / settings.TNBC_MULTIPLICATION_FACTOR
-        rounded_amount = round(amount, 4)
-        return rounded_amount
-
-    def get_decimal_total_won_in_tournaments(self):
-        amount = self.total_won_in_tournaments / settings.TNBC_MULTIPLICATION_FACTOR
-        rounded_amount = round(amount, 4)
-        return rounded_amount
-
-    def get_decimal_total_tip_sent(self):
-        amount = self.total_tip_sent / settings.TNBC_MULTIPLICATION_FACTOR
-        rounded_amount = round(amount, 4)
-        return rounded_amount
-
-    def get_decimal_total_tip_received(self):
-        amount = self.total_tip_received / settings.TNBC_MULTIPLICATION_FACTOR
-        rounded_amount = round(amount, 4)
-        return rounded_amount
-
     def __str__(self):
         return f"User: {self.user};"
 
@@ -65,11 +44,6 @@ class UserTip(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     title = models.CharField(max_length=255, null=True, blank=True)
-
-    def get_decimal_amount(self):
-        amount = self.amount / settings.TNBC_MULTIPLICATION_FACTOR
-        rounded_amount = round(amount, 4)
-        return rounded_amount
 
     def __str__(self):
         return f"{self.sender} to {self.recepient} {self.amount} TNBC."

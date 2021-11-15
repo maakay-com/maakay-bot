@@ -106,7 +106,7 @@ class tip(commands.Cog):
                 sender = await self.bot.fetch_user(int(tip.sender.discord_id))
                 recepient = await self.bot.fetch_user(int(tip.recepient.discord_id))
 
-                embed.add_field(name="\u200b", value=f"> Sender: {sender.mention}\n> Recepient: {recepient.mention}\n> Amount: {tip.get_decimal_amount()} TNBC\n> Message: {tip.title}", inline=False)
+                embed.add_field(name="\u200b", value=f"> Sender: {sender.mention}\n> Recepient: {recepient.mention}\n> Amount: {convert_to_decimal(tip.amount)} TNBC\n> Message: {tip.title}", inline=False)
 
         else:
             embed = discord.Embed(title="Error!!", description="404 Not Found.", color=Color.orange())

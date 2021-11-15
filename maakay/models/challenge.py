@@ -1,7 +1,6 @@
 import uuid
 
 from django.db import models
-from django.conf import settings
 
 from core.models.user import User
 
@@ -49,11 +48,6 @@ class Challenge(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def get_decimal_amount(self):
-        amount = self.amount / settings.TNBC_MULTIPLICATION_FACTOR
-        rounded_amount = round(amount, 4)
-        return rounded_amount
 
     def __str__(self):
         return f"Title: {self.title}; Amount: {self.amount}"
