@@ -128,10 +128,13 @@ class general(commands.Cog):
                                 converted_amount_plus_fee = (amount + fee) * settings.TNBC_MULTIPLICATION_FACTOR
                                 obj.balance -= converted_amount_plus_fee
                                 obj.save()
+
                                 UserTransactionHistory.objects.create(user=obj, amount=converted_amount_plus_fee, type=UserTransactionHistory.WITHDRAW, transaction=txs)
+
                                 statistic, created = Statistic.objects.get_or_create(title="main")
                                 statistic.total_balance -= converted_amount_plus_fee
                                 statistic.save()
+
                                 embed = discord.Embed(title="Coins Withdrawn!",
                                                       description=f"Successfully withdrawn {amount} TNBC to {obj.withdrawal_address} \n Use `/balance` to check your new balance.")
                             else:
