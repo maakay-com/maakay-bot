@@ -10,7 +10,6 @@ from discord_slash.utils.manage_components import create_button, create_actionro
 from discord_slash.model import ButtonStyle
 from discord.ext import commands
 from discord_slash.utils.manage_commands import create_option, create_choice
-from maakay.shortcuts import convert_to_decimal
 
 # Django Setup on bot
 DJANGO_DIRECTORY = os.getcwd()
@@ -23,6 +22,8 @@ from core.utils.scan_chain import match_transaction, check_confirmation, scan_ch
 from maakay.models.challenge import Challenge
 from core.models.user import User
 from core.models.guild import Guild
+from maakay.shortcuts import convert_to_decimal
+
 
 # Environment Variables
 TOKEN = os.environ['MAAKAY_DISCORD_TOKEN']
@@ -62,6 +63,7 @@ async def on_ready():
 
 
 async def create_role(guild_obj, guild):
+
     try:
         role = await guild.create_role(name="Maakay Bot Admin", hoist=True, reason="Role for the Maakay bot admin", colour=discord.Colour.red())
         guild_obj.manager_role_id = role.id
@@ -69,7 +71,6 @@ async def create_role(guild_obj, guild):
         guild_obj.save()
 
     except Forbidden:
-
         guild_obj.has_permissions = False
         guild_obj.save()
         print("Permission error smh")

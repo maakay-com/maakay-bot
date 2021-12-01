@@ -168,7 +168,7 @@ class admin(commands.Cog):
                     else:
                         embed = discord.Embed(title="Error!", description="Could not retrive fee info from the bank!!")
                 else:
-                    embed = discord.Embed(title="No withdrawal address set!!", description="Use `/set_withdrawal_address tnbc` to set withdrawal address!!")
+                    embed = discord.Embed(title="No withdrawal address set!!", description="Use `/admin set_withdrawal_address` to set withdrawal address!!")
             else:
                 role = ctx.guild.get_role(int(guild.manager_role_id))
                 embed = discord.Embed(title="Error", description=f"You don't have the required `{role.name}` role")

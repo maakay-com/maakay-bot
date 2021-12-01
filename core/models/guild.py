@@ -12,7 +12,6 @@ class Guild(models.Model):
 
     guild_id = models.CharField(max_length=255, unique=True)
 
-    tournament_channel_id = models.CharField(max_length=255, blank=True, null=True)
     manager_role_id = models.CharField(max_length=255, blank=True, null=True)
 
     withdrawal_address = models.CharField(max_length=64, blank=True, null=True)

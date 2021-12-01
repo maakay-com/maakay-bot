@@ -9,7 +9,7 @@ from django.conf import settings
 from discord_slash.model import ButtonStyle
 from discord_slash.utils.manage_commands import create_option
 from maakay.models.profile import UserProfile
-from maakay.shortcuts import convert_to_decimal
+from maakay.shortcuts import convert_to_decimal, get_or_create_guild
 from django.db.models import Q, F
 from maakay.models.challenge import Challenge
 
@@ -128,12 +128,24 @@ class challenge(commands.Cog):
                 challenge.status = Challenge.COMPLETED
                 challenge.save()
 
-                CHALLENGE_FEE_MULTIPLICATION = (100 - settings.CHALLENGE_FEE) / 100
-                winner.balance += challenge.amount * CHALLENGE_FEE_MULTIPLICATION
+                challenge_fee = challenge.amount * settings.CHALLENGE_FEE / 100
+
+                guild = ctx.guild
+
+                if guild:
+                    guild_db = get_or_create_guild(guild.id)
+                    guild_reward = challenge_fee * settings.MAAKAY_BOT_GUILD_REWARD / 100
+                    guild_db.guild_balance += guild_reward
+                    guild_db.total_fee_collected += guild_reward
+                    guild_db.save()
+
+                winner.balance += challenge.amount - challenge_fee
                 winner.locked -= challenge.amount
                 winner.save()
+
                 UserProfile.objects.filter(user=winner).update(total_won_in_challenges=F('total_won_in_challenges') + challenge.amount - settings.CHALLENGE_FEE,
                                                                total_challenges_won=F('total_challenges_won') + 1)
+
                 UserProfile.objects.filter(user=referee).update(total_referred=F('total_referred') + 1)
 
                 embed.add_field(name="Yaayy", value=f"{user.mention} is rewarded **{convert_to_decimal(challenge.amount - settings.CHALLENGE_FEE)}** TNBC for *{challenge.title}*.")

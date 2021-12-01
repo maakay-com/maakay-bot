@@ -13,6 +13,10 @@
 
 Maakay-bot is a discord bot made to expand the use TNBC(The new boston coin) around the gaming community by introducing shiny commands specific to gamers. Read below to know more!
 
+Invite the discord bot into your discord server: https://discord.com/api/oauth2/authorize?client_id=893822255816118332&permissions=268435456&scope=bot%20applications.commands
+
+Staging Discord Bot Invite Link: https://discord.com/api/oauth2/authorize?client_id=891676665770541066&permissions=268435456&scope=bot%20applications.commands
+
 #### Contributing
 Clone the repo.
 
@@ -28,7 +32,6 @@ SIGNING_KEY  # Signing key of TNBC account that'll be used to transfer TNBC (sug
 BOT_MANAGER_ID  # Discord ID of the user who can use /kill command
 MAAKAY_DISCORD_TOKEN  # Discord Token of the bot
 SECRET_KEY  # Django Secret Key (Just a random string)
-TOURNAMENT_CHANNEL_ID  # Discord Channel ID of tournament channel
 CHECK_TNBC_CONFIRMATION  # Flag to check or not to check confirmations (True/ False)
 BANK_IP  # TNBC Bank IP we're connecting to.
 ```
