@@ -7,7 +7,7 @@ from asgiref.sync import sync_to_async
 from django.conf import settings
 from discord_slash.utils.manage_commands import create_option
 from maakay.models.profile import UserTip, UserProfile
-from maakay.shortcuts import convert_to_decimal
+from maakay.shortcuts import convert_to_decimal, get_or_create_guild
 from django.db.models import Q
 
 
@@ -62,19 +62,30 @@ class tip(commands.Cog):
                 else:
 
                     await ctx.defer()
+                    guild = ctx.guild
+
+                    if guild:
+                        guild_db = get_or_create_guild(guild.id)
+                        guild_reward = settings.TIP_FEE * settings.MAAKAY_BOT_GUILD_REWARD / 100
+                        guild_db.guild_balance += guild_reward
+                        guild_db.total_fee_collected += guild_reward
+                        guild_db.save()
 
                     sender.balance -= total_amount_including_fees
-                    recepient.balance += total_amount
                     sender.save()
+
+                    recepient.balance += total_amount
                     recepient.save()
+
                     UserTip.objects.create(sender=sender, recepient=recepient, amount=total_amount, title=message)
 
-                    sender_profile = UserProfile.objects.get_or_create(user=sender)
-                    recepient_profile = UserProfile.objects.get_or_create(user=recepient)
-                    sender_profile[0].total_tip_sent += total_amount_including_fees
-                    sender_profile[0].save()
-                    recepient_profile[0].total_tip_received += total_amount
-                    recepient_profile[0].save()
+                    sender_profile, created = UserProfile.objects.get_or_create(user=sender)
+                    sender_profile.total_tip_sent += total_amount_including_fees
+                    sender_profile.save()
+
+                    recepient_profile, created = UserProfile.objects.get_or_create(user=recepient)
+                    recepient_profile.total_tip_received += total_amount
+                    recepient_profile.save()
 
                     if message:
                         await ctx.send(f"{ctx.author.mention} tipped {user.mention} {amount} TNBC.\nMessage: {message}.")
