@@ -59,20 +59,21 @@ class challenge(commands.Cog):
             total_amount = int(amount * settings.TNBC_MULTIPLICATION_FACTOR)
 
             if total_amount >= settings.MINIMUL_CHALLENGE_AMOUNT:
-                if contender_user.get_available_balance() >= total_amount:
-                    if challenger_user.get_available_balance() >= total_amount:
-                        challenger_user.locked += total_amount
-                        challenger_user.save()
-                        embed.add_field(name='Challenge Invitation', value=f"{contender.mention}, {ctx.author.mention} invited you on *{title}* for **{amount} TNBC**.", inline=False)
-                        embed.add_field(name='Referee Invitation', value=f"{referee.mention}, {ctx.author.mention} invited you to be referee of *{title}*.")
-                        challenge = await sync_to_async(Challenge.objects.create)(challenger=challenger_user, contender=contender_user, referee=referee_user, title=title, amount=total_amount)
-                        embed.set_footer(text=f"Challenge id - {challenge.uuid_hex}")
-                        await ctx.send(f"{contender.mention} {referee.mention}", embed=embed, components=[create_actionrow(create_button(custom_id=f"challenge_accept_{challenge.uuid}", style=ButtonStyle.green, label="Accept"), create_button(custom_id=f"challenge_reject_{challenge.uuid}", style=ButtonStyle.red, label="Reject"))], hidden=False)
-                    else:
-                        embed.add_field(name="Error", value=f"You only have {convert_to_decimal(challenger_user.get_available_balance())} TNBC availabe out of {amount}.")
-                        await ctx.send(embed=embed, hidden=True)
+
+                if challenger_user.get_available_balance() >= total_amount:
+                    challenger_user.locked += total_amount
+                    challenger_user.save()
+
+                    embed.add_field(name='Challenge Invitation', value=f"{contender.mention}, {ctx.author.mention} invited you on *{title}* for **{amount} TNBC**.", inline=False)
+                    embed.add_field(name='Referee Invitation', value=f"{referee.mention}, {ctx.author.mention} invited you to be referee of *{title}*.")
+
+                    challenge = await sync_to_async(Challenge.objects.create)(challenger=challenger_user, contender=contender_user, referee=referee_user, title=title, amount=total_amount)
+
+                    embed.set_footer(text=f"Challenge id - {challenge.uuid_hex}")
+                    await ctx.send(f"{contender.mention} {referee.mention}", embed=embed, components=[create_actionrow(create_button(custom_id=f"challenge_accept_{challenge.uuid}", style=ButtonStyle.green, label="Accept"), create_button(custom_id=f"challenge_reject_{challenge.uuid}", style=ButtonStyle.red, label="Reject"))])
+
                 else:
-                    embed.add_field(name="Error!", value=f"{contender.mention} only has {convert_to_decimal(contender_user.get_available_balance())} TNBC available out of {amount}")
+                    embed.add_field(name="Error", value=f"You only have {convert_to_decimal(challenger_user.get_available_balance())} TNBC availabe out of {amount} TNBC require to accept this challenge. Use `/deposit tnbc` command to deposit tnbc into your account.")
                     await ctx.send(embed=embed, hidden=True)
             else:
                 embed.add_field(name="Error!", value=f"You can not challenge less than {settings.MINIMUL_CHALLENGE_AMOUNT / settings.TNBC_MULTIPLICATION_FACTOR} TNBC.")
@@ -193,7 +194,7 @@ class challenge(commands.Cog):
                 await ctx.send(embed=embed)
         else:
             embed.add_field(name="Error!", value="You don't have the permission to cancel this challenge.")
-            await ctx.send(embed=embed)
+            await ctx.send(embed=embed, hidden=True)
 
     @cog_ext.cog_subcommand(base="challenge", name="history", description="Show the history of challenges in which the user was included.")
     async def challenge_history(self, ctx):

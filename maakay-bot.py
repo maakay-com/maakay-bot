@@ -242,66 +242,73 @@ async def on_component(ctx: ComponentContext):
             contender = await bot.fetch_user(int(challenge.contender.discord_id))
             referee = await bot.fetch_user(int(challenge.referee.discord_id))
 
-            if challenge.contender == obj:
-                if challenge.contender_status == Challenge.PENDING:
-                    if button_action == "accept":
-                        if obj.get_available_balance() >= challenge.amount:
-                            if challenge.referee_status == Challenge.ACCEPTED:
-                                challenge.status = Challenge.ONGOING
-                            challenge.contender_status = Challenge.ACCEPTED
-                            challenge.contender.locked += challenge.amount
-                            challenge.contender.save()
-                            challenge.save()
-                            embed.add_field(name="Accepted", value=f"Challenge accepted by contender {contender.mention}", inline=False)
-                            embed.add_field(name="Title", value=challenge.title)
-                            embed.add_field(name="Amount (TNBC)", value=f"**{convert_to_decimal(challenge.amount)}**")
-                            embed.add_field(name="Challenger", value=f"{challenger.mention}")
-                            embed.add_field(name="Contender", value=f"{contender.mention}")
-                            embed.add_field(name="Referee", value=f"{referee.mention}")
-                            embed.add_field(name="Status", value=challenge.status)
-                            await ctx.send(f"{challenger.mention} {referee.mention}", embed=embed)
-                        else:
-                            embed.add_field(name="Error!", value=f"You only have {convert_to_decimal(obj.get_available_balance())} TNBC out of {convert_to_decimal(challenge.amount)} TNBC.\nPlease use `/user deposit` command to deposit TNBC.")
-                            await ctx.send(embed=embed, hidden=True)
-                    else:
-                        challenge.contender_status = Challenge.REJECTED
-                        challenge.status = Challenge.CANCELLED
-                        challenge.save()
-                        challenge.challenger.locked -= challenge.amount
-                        challenge.challenger.save()
-                        embed.add_field(name="Rejected", value=f"Challenge rejected by contender {contender.mention}")
-                        await ctx.send(f"{challenger.mention} {referee.mention}", embed=embed)
-                else:
-                    embed.add_field(name="Sorry", value=f"You've already accepted/ rejected *{challenge.title}*")
-                    await ctx.send(embed=embed, hidden=True)
-            elif challenge.referee == obj:
-                if challenge.referee_status == Challenge.PENDING:
-                    if button_action == "accept":
-                        if challenge.contender_status == Challenge.ACCEPTED:
+            if challenge.contender == obj and challenge.contender_status == Challenge.PENDING:
+                if button_action == "accept":
+                    if obj.get_available_balance() >= challenge.amount:
+                        if challenge.referee_status == Challenge.ACCEPTED:
                             challenge.status = Challenge.ONGOING
-                            challenge.contender.locked += challenge.amount
-                            challenge.contender.save()
-                        challenge.referee_status = Challenge.ACCEPTED
+
+                        challenge.contender_status = Challenge.ACCEPTED
                         challenge.save()
-                        embed.add_field(name="Accepted", value=f"Challenge accepted by referee {referee.mention}", inline=False)
+
+                        challenge.contender.locked += challenge.amount
+                        challenge.contender.save()
+
+                        embed.add_field(name="Accepted", value=f"Challenge accepted by contender {contender.mention}", inline=False)
                         embed.add_field(name="Title", value=challenge.title)
                         embed.add_field(name="Amount (TNBC)", value=f"**{convert_to_decimal(challenge.amount)}**")
                         embed.add_field(name="Challenger", value=f"{challenger.mention}")
                         embed.add_field(name="Contender", value=f"{contender.mention}")
                         embed.add_field(name="Referee", value=f"{referee.mention}")
                         embed.add_field(name="Status", value=challenge.status)
-                        await ctx.send(f"{challenger.mention} {contender.mention}", embed=embed)
+                        await ctx.send(f"{challenger.mention} {referee.mention}", embed=embed)
                     else:
-                        challenge.referee_status = Challenge.REJECTED
-                        challenge.status = Challenge.CANCELLED
-                        challenge.save()
-                        challenge.challenger.locked -= challenge.amount
-                        challenge.challenger.save()
-                        embed.add_field(name="Rejected", value=f"Challenge rejected by referee {referee.mention}")
-                        await ctx.send(f"{challenger.mention} {contender.mention}", embed=embed)
+                        embed.add_field(name="Error!", value=f"You only have {convert_to_decimal(obj.get_available_balance())} TNBC out of {convert_to_decimal(challenge.amount)} TNBC.\nPlease use `/user deposit` command to deposit TNBC.")
+                        await ctx.send(embed=embed, hidden=True)
+
                 else:
-                    embed.add_field(name="Sorry", value=f"You've already accepted/ rejected *{challenge.title}*")
-                    await ctx.send(embed=embed, hidden=True)
+                    challenge.contender_status = Challenge.REJECTED
+                    challenge.status = Challenge.CANCELLED
+                    challenge.save()
+
+                    challenge.challenger.locked -= challenge.amount
+                    challenge.challenger.save()
+
+                    embed.add_field(name="Rejected", value=f"Challenge rejected by contender {contender.mention}")
+                    await ctx.send(f"{challenger.mention} {referee.mention}", embed=embed)
+
+            elif challenge.referee == obj and challenge.referee_status == Challenge.PENDING:
+                if button_action == "accept":
+                    if challenge.contender_status == Challenge.ACCEPTED:
+                        challenge.status = Challenge.ONGOING
+
+                    challenge.referee_status = Challenge.ACCEPTED
+                    challenge.save()
+
+                    embed.add_field(name="Accepted", value=f"Challenge accepted by referee {referee.mention}", inline=False)
+                    embed.add_field(name="Title", value=challenge.title)
+                    embed.add_field(name="Amount (TNBC)", value=f"**{convert_to_decimal(challenge.amount)}**")
+                    embed.add_field(name="Challenger", value=f"{challenger.mention}")
+                    embed.add_field(name="Contender", value=f"{contender.mention}")
+                    embed.add_field(name="Referee", value=f"{referee.mention}")
+                    embed.add_field(name="Status", value=challenge.status)
+                    await ctx.send(f"{challenger.mention} {contender.mention}", embed=embed)
+
+                else:
+                    if challenge.contender_status == Challenge.ACCEPTED:
+                        challenge.contender.locked -= challenge.amount
+                        challenge.contender.save()
+
+                    challenge.referee_status = Challenge.REJECTED
+                    challenge.status = Challenge.CANCELLED
+                    challenge.save()
+
+                    challenge.challenger.locked -= challenge.amount
+                    challenge.challenger.save()
+
+                    embed.add_field(name="Rejected", value=f"Challenge rejected by referee {referee.mention}")
+                    await ctx.send(f"{challenger.mention} {contender.mention}", embed=embed)
+
             else:
                 embed.add_field(name="Error!", value="You do not have correct permission to accept or reject this challenge.")
                 await ctx.send(embed=embed, hidden=True)
